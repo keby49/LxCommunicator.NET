@@ -81,8 +81,8 @@ namespace Loxone.Communicator {
 		/// <param name="handler">The tokenhandler that should be used</param>
 		public override async Task Authenticate(TokenHandler handler) {
 			if (await MiniserverReachable()) {
-				WebSocket = new ClientWebSocket();
-				await WebSocket.ConnectAsync(new Uri($"ws://{IP}:{Port}/ws/rfc6455"), CancellationToken.None);
+				WebSocket = CreateWebSocketClient();
+				await WebSocket.ConnectAsync(CreateUri(), CancellationToken.None);
 				BeginListening();
 				string key = await Session.GetSessionKey();
 				string keyExchangeResponse = (await SendWebservice(new WebserviceRequest<string>($"jdev/sys/keyexchange/{key}", EncryptionType.None))).Value;
@@ -102,6 +102,14 @@ namespace Loxone.Communicator {
 				}
 				await HttpClient?.Authenticate(new TokenHandler(HttpClient, handler.Username, handler.Token, false));
 			}
+		}
+
+		private static ClientWebSocket CreateWebSocketClient() {
+			return new ClientWebSocket();
+		}
+
+		private Uri CreateUri() {
+			return new Uri($"ws://{IP}:{Port}/ws/rfc6455");
 		}
 
 		/// <summary>
