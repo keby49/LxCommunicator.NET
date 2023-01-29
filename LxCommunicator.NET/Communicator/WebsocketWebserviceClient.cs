@@ -13,6 +13,9 @@ using System.Threading.Tasks;
 using System.Timers;
 using Timer = System.Timers.Timer;
 
+//TODO >> RECONNECT >> https://github.com/Marfusios/websocket-client
+//https://www.nuget.org/packages/Websocket.Client
+
 namespace Loxone.Communicator {
 	/// <summary>
 	/// Client to handle websocketWebservices to loxone miniserver. Use <see cref="WebsocketWebserviceClient"/> for communicating via websocket or derive from it to create your own websocketClient.
