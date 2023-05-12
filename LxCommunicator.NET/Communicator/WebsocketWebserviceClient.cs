@@ -6,9 +6,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.WebSockets;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Websocket.Client;
 
 namespace Loxone.Communicator {
 	/// <summary>
@@ -23,7 +25,7 @@ namespace Loxone.Communicator {
 		/// <summary>
 		/// The websocket the webservices will be sent with.
 		/// </summary>
-		private ClientWebSocket WebSocket;
+		private WebsocketClient WebSocket;
 
 		/// <summary>
 		/// A Listener to catch every incoming message from the miniserver
@@ -82,7 +84,7 @@ namespace Loxone.Communicator {
 		public override async Task Authenticate(TokenHandler handler) {
 			if (await MiniserverReachable()) {
 				WebSocket = CreateWebSocketClient();
-				await WebSocket.ConnectAsync(CreateUri(), CancellationToken.None);
+				await ConnectWebsocketClient();
 				BeginListening();
 				string key = await Session.GetSessionKey();
 				string keyExchangeResponse = (await SendWebservice(new WebserviceRequest<string>($"jdev/sys/keyexchange/{key}", EncryptionType.None))).Value;
@@ -104,8 +106,28 @@ namespace Loxone.Communicator {
 			}
 		}
 
-		private static ClientWebSocket CreateWebSocketClient() {
-			return new ClientWebSocket();
+		private async Task ConnectWebsocketClient() {
+			//await WebSocket.ConnectAsync(CreateUri(), CancellationToken.None);
+			if (!this.WebSocket.IsStarted) {
+				await this.WebSocket.Start();
+			}
+		}
+
+		private WebsocketClient CreateWebSocketClient() {
+
+			var factory = new Func<ClientWebSocket>(() => new ClientWebSocket {
+				Options =
+				{
+					
+					//KeepAliveInterval = TimeSpan.FromSeconds(5),
+					//Proxy = ...
+
+					//ClientCertificates = ...
+				}
+			});
+
+			var client = new WebsocketClient(this.CreateUri(), factory);
+			return client;
 		}
 
 		private Uri CreateUri() {
@@ -141,7 +163,7 @@ namespace Loxone.Communicator {
 				Listener = null;
 			}
 			Listener = Task.Run(async () => {
-				while (WebSocket.State == WebSocketState.Open) {
+				while (WebSocket.NativeClient.State == WebSocketState.Open) {
 					WebserviceResponse response = await ReceiveWebsocketMessage(1024, TokenSource.Token);
 					if (!HandleWebserviceResponse(response) && !ParseEventTable(response.Content, response.Header.Type)) {
 						OnReceiveMessge?.Invoke(WebSocket, new MessageReceivedEventArgs(response));
@@ -170,23 +192,24 @@ namespace Loxone.Communicator {
 					WebserviceRequest encryptedRequest = new WebserviceRequest(command, EncryptionType.None);
 					WebserviceResponse encrypedResponse = await SendWebservice(encryptedRequest);
 					if (encrypedResponse == null) {
-						request.TryValidateResponse(new WebserviceResponse(null, null, (int?)WebSocket?.CloseStatus));
+						request.TryValidateResponse(new WebserviceResponse(null, null, (int?)WebSocket?.NativeClient?.CloseStatus));
 					}
 					else {
-						request.TryValidateResponse(new WebserviceResponse(encrypedResponse.Header, Encoding.UTF8.GetBytes(Cryptography.AesDecrypt(encrypedResponse.GetAsStringContent(), Session)), (int?)WebSocket?.CloseStatus));
+						request.TryValidateResponse(new WebserviceResponse(encrypedResponse.Header, Encoding.UTF8.GetBytes(Cryptography.AesDecrypt(encrypedResponse.GetAsStringContent(), Session)), (int?)WebSocket?.NativeClient.CloseStatus));
 					}
 					return request.WaitForResponse();
 
 				default:
 				case EncryptionType.None:
-					if (WebSocket == null || WebSocket.State != WebSocketState.Open) {
+					if (WebSocket == null || WebSocket.NativeClient.State != WebSocketState.Open) {
 						return null;
 					}
 					lock (Requests) {
 						Requests.Add(request);
 					}
 					byte[] input = Encoding.UTF8.GetBytes(request.Command);
-					await WebSocket.SendAsync(new ArraySegment<byte>(input, 0, input.Length), WebSocketMessageType.Text, true, CancellationToken.None);
+					//this.WebSocket.Send(input);
+					await WebSocket.NativeClient.SendAsync(new ArraySegment<byte>(input, 0, input.Length), WebSocketMessageType.Text, true, CancellationToken.None);
 					return request.WaitForResponse();
 			}
 		}
@@ -207,7 +230,7 @@ namespace Loxone.Communicator {
 				}
 			} while (header == null || header.Estimated);
 			data = await InternalReceiveWebsocketMessage(header.Length, TokenSource.Token);
-			return new WebserviceResponse(header, data, (int?)WebSocket?.CloseStatus);
+			return new WebserviceResponse(header, data, (int?)WebSocket?.NativeClient.CloseStatus);
 		}
 
 		/// <summary>
@@ -222,7 +245,7 @@ namespace Loxone.Communicator {
 			int offset = 0;
 			using (MemoryStream stream = new MemoryStream()) {
 				do {
-					result = await WebSocket?.ReceiveAsync(new ArraySegment<byte>(buffer, offset, Math.Max(0, buffer.Length - offset)), CancellationToken.None);
+					result = await WebSocket?.NativeClient.ReceiveAsync(new ArraySegment<byte>(buffer, offset, Math.Max(0, buffer.Length - offset)), CancellationToken.None);
 					offset += result.Count;
 					if (offset >= buffer.Length) {
 						await stream.WriteAsync(buffer, 0, buffer.Length, token);

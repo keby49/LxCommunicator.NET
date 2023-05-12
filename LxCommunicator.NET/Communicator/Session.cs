@@ -131,7 +131,11 @@ namespace Loxone.Communicator {
 		private string PemToXml(string pem) {
 			return GetXmlRsaKey(pem, obj => {
 				var publicKey = (RsaKeyParameters)obj;
-				return DotNetUtilities.ToRSA(publicKey, new CspParameters { Flags = CspProviderFlags.UseMachineKeyStore });
+				return DotNetUtilities.ToRSA(
+					publicKey,
+					new CspParameters {
+						Flags = CspProviderFlags.UseMachineKeyStore
+					});
 			}, rsa => rsa.ToXmlString(false));
 
 		}
