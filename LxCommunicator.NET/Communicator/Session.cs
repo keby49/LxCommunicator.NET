@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -129,16 +130,22 @@ namespace Loxone.Communicator {
 		/// <param name="pem">a string in PEM format</param>
 		/// <returns>a string in XML format</returns>
 		private string PemToXml(string pem) {
-			return GetXmlRsaKey(pem, obj => {
-				var publicKey = (RsaKeyParameters)obj;
-				return DotNetUtilities.ToRSA(
-					publicKey
-					//,
-					//new CspParameters {
-					//	Flags = CspProviderFlags.UseMachineKeyStore
-					//}
-					);
-			}, rsa => rsa.ToXmlString(false));
+			RSA key = RSA.Create();
+			key.ImportFromPem(pem.ToCharArray());
+			return key.ToXmlString(false);
+			//key.ImportSubjectPublicKeyInfo()
+
+			//return GetXmlRsaKey(pem, obj => {
+			//	var publicKey = (RsaKeyParameters)obj;
+			//	
+			//	return DotNetUtilities.ToRSA(
+			//		publicKey
+			//		,
+			//		new CspParameters {
+			//			Flags = CspProviderFlags.UseMachineKeyStore
+			//		}
+			//		);
+			//}, rsa => rsa.ToXmlString(false));
 
 		}
 

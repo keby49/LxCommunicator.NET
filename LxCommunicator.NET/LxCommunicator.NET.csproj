@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFrameworks>net6.0</TargetFrameworks>
-    <PackageId>LxCommunicator</PackageId>
-    <Version>0.9.5</Version>
+    <PackageId>LxCommunicatorCustom</PackageId>
+    <Version>0.9.6-alfa-002</Version>
     <Authors>Loxone Electronic GmbH</Authors>
     <Product>LxCommunicator.NET</Product>
     <Description>This library exposes all necessary classes to establish a secure and encrypted connection to a Loxone Miniserver.</Description>
@@ -16,6 +16,7 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageIcon>Logo.png</PackageIcon>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <AssemblyName>$(MSBuildProjectName)Custom</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net472' ">
