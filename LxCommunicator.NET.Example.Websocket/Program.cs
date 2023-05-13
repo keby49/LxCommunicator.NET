@@ -8,13 +8,20 @@ namespace LxCommunicator.NET.Example.Websocket {
         private static WebsocketWebserviceClient client;
 
         private static async Task Main(string[] args) {
-            using (client = new WebsocketWebserviceClient("testminiserver.loxone.com", 7777, 2, "098802e1-02b4-603c-ffffeee000d80cfd", "LxCommunicator.NET.Websocket")) {
-                using (TokenHandler handler = new TokenHandler(client, "app")) {
-                    handler.SetPassword("LoxLIVEpasswordTest");
+            using (client = new WebsocketWebserviceClient(
+				"192-168-50-50.504f94a181b0.dyndns.loxonecloud.com", 
+				80, 
+				2, 
+				"098802e1-02b4-603c-ffffeee000d80cfd", 
+				"LxCommunicator.NET.Websocket")) {
+                using (TokenHandler handler = new TokenHandler(client, "lan")) {
+                    handler.SetPassword("JQ9Hsa9tP5xtnW");
                     client.OnReceiveEventTable += Client_OnReceiveEventTable;
                     client.OnAuthenticated += Client_OnAuthenticated;
                     await client.Authenticate(handler);
-                    string result = (await client.SendWebservice(new WebserviceRequest<string>("jdev/sps/enablebinstatusupdate", EncryptionType.None))).Value;
+					var response = await client.SendWebservice(new WebserviceRequest<string>("jdev/sps/enablebinstatusupdate", EncryptionType.None));
+
+					string result = response.Value;
                     Console.ReadLine();
                     await handler.KillToken();
                 }
