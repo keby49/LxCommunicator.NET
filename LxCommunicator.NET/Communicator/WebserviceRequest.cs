@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Globalization;
 using System.Text;
 using System.Threading;
 
@@ -78,6 +79,8 @@ namespace Loxone.Communicator {
 		/// <returns>The received WebserviceResponse</returns>
 		public WebserviceResponse WaitForResponse() {
 			if (!ResponseReceived.WaitOne(Timeout)) {
+
+				throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "WebSocket > Timeout"));
 				Response = null;
 			}
 			return Response;

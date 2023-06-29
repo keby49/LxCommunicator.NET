@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
@@ -50,7 +51,10 @@ namespace Loxone.Communicator {
 				responseContent = Encoding.UTF8.GetBytes(Cryptography.AesDecrypt(Encoding.UTF8.GetString(responseContent), Session));
 			}
 			WebserviceResponse response = new WebserviceResponse(null, responseContent, (int)httpResponse.StatusCode);
-			encRequest.TryValidateResponse(response);
+			var responseIsValid = encRequest.TryValidateResponse(response);
+			if (!responseIsValid) {
+				throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Websocket > Invalid response."));
+			}
 			return response;
 		}
 

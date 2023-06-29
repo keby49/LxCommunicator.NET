@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.WebSockets;
@@ -23,7 +24,7 @@ namespace Loxone.Communicator {
 		/// <summary>
 		/// The websocket the webservices will be sent with.
 		/// </summary>
-		private ClientWebSocket WebSocket;
+		public ClientWebSocket WebSocket;
 
 		/// <summary>
 		/// A Listener to catch every incoming message from the miniserver
@@ -82,6 +83,8 @@ namespace Loxone.Communicator {
 		public override async Task Authenticate(TokenHandler handler) {
 			if (await MiniserverReachable()) {
 				WebSocket = new ClientWebSocket();
+				this.WebSocket.Options.KeepAliveInterval = TimeSpan.FromSeconds(1); 
+
 				await WebSocket.ConnectAsync(new Uri($"ws://{IP}:{Port}/ws/rfc6455"), CancellationToken.None);
 				BeginListening();
 				string key = await Session.GetSessionKey();
@@ -172,14 +175,24 @@ namespace Loxone.Communicator {
 				default:
 				case EncryptionType.None:
 					if (WebSocket == null || WebSocket.State != WebSocketState.Open) {
-						return null;
+
+						if (WebSocket == null) {
+							throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "WebSocket is null."));
+						}
+
+						if (WebSocket.State != WebSocketState.Open) {
+							throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "WebSocket.State is not open. State={0}", WebSocket.State));
+						}
+						//return null;
 					}
 					lock (Requests) {
 						Requests.Add(request);
 					}
+										
 					byte[] input = Encoding.UTF8.GetBytes(request.Command);
 					await WebSocket.SendAsync(new ArraySegment<byte>(input, 0, input.Length), WebSocketMessageType.Text, true, CancellationToken.None);
-					return request.WaitForResponse();
+					var responseWait = request.WaitForResponse();
+					return responseWait;
 			}
 		}
 
@@ -221,6 +234,11 @@ namespace Loxone.Communicator {
 						offset = 0;
 					}
 				} while (result != null && !result.EndOfMessage);
+
+				if (result.CloseStatus != null) {
+
+				}
+
 				await stream.WriteAsync(buffer, 0, offset, token);
 				return stream.ToArray();
 			}
