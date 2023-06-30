@@ -22,18 +22,6 @@
   <ItemGroup Condition=" '$(TargetFramework)' == 'net472' ">
     <Reference Include="System.Web" />
   </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="NuGet.Config" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="NuGet.Config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
-  </ItemGroup>
 	
 
   <ItemGroup>
