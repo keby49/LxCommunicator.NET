@@ -1,13 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30330.147
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33723.286
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LxCommunicator.NET", "LxCommunicator.NET\LxCommunicator.NET.csproj", "{BFE62D3B-F855-4A8F-8CFA-6178AB30B37F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LxCommunicator.NET", "LxCommunicator.NET\LxCommunicator.NET.csproj", "{BFE62D3B-F855-4A8F-8CFA-6178AB30B37F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LxCommunicator.NET.Example.Http", "LxCommunicator.NET.Example.Http\LxCommunicator.NET.Example.Http.csproj", "{5A793E57-2E50-48ED-AEF0-4DA3068FD591}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LxCommunicator.NET.Example.Http", "LxCommunicator.NET.Example.Http\LxCommunicator.NET.Example.Http.csproj", "{5A793E57-2E50-48ED-AEF0-4DA3068FD591}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LxCommunicator.NET.Example.Websocket", "LxCommunicator.NET.Example.Websocket\LxCommunicator.NET.Example.Websocket.csproj", "{6B606C6C-9497-439C-BE2C-7415CB1A3E06}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LxCommunicator.NET.Example.Websocket", "LxCommunicator.NET.Example.Websocket\LxCommunicator.NET.Example.Websocket.csproj", "{6B606C6C-9497-439C-BE2C-7415CB1A3E06}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LxCommunicator.NET.Tests", "LxCommunicator.NET.Tests\LxCommunicator.NET.Tests.csproj", "{9821FA6B-F28B-4777-8569-70F144B3D42E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{6B606C6C-9497-439C-BE2C-7415CB1A3E06}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6B606C6C-9497-439C-BE2C-7415CB1A3E06}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6B606C6C-9497-439C-BE2C-7415CB1A3E06}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9821FA6B-F28B-4777-8569-70F144B3D42E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9821FA6B-F28B-4777-8569-70F144B3D42E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9821FA6B-F28B-4777-8569-70F144B3D42E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9821FA6B-F28B-4777-8569-70F144B3D42E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
