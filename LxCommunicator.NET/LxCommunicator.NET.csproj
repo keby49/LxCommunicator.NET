@@ -22,6 +22,10 @@
   <ItemGroup Condition=" '$(TargetFramework)' == 'net472' ">
     <Reference Include="System.Web" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="AdvancedCommunicator\_olld\WebsocketWebserviceClient.cs" />
+  </ItemGroup>
 	
 
   <ItemGroup>
@@ -42,6 +46,7 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+    <None Include="AdvancedCommunicator\_olld\WebsocketWebserviceClient.cs" />
   </ItemGroup>
 
 </Project>

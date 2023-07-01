@@ -5,14 +5,21 @@ using Loxone.Communicator.Events;
 namespace LxCommunicator.NET.Tests;
 
 public class WebsocketWebserviceClientTests {
+
+	private ConnectionConfiguration GetConfig() => new ConnectionConfiguration(
+		"192-168-50-50.504f94a181b0.dyndns.loxonecloud.com",
+		80,
+		2,
+			"098802e1-02b4-603c-ffffeee000d80cfd",
+			"LxCommunicator.NET.Websocket") { };
+
+	private WebsocketWebserviceClient GetClient() {
+		return new WebsocketWebserviceClient(this.GetConfig());
+	}
+
 	[Fact]
 	public async Task Test1() {
-		var client = new WebsocketWebserviceClient(
-			"192-168-50-50.504f94a181b0.dyndns.loxonecloud.com",
-			80,
-			2,
-			"098802e1-02b4-603c-ffffeee000d80cfd",
-			"LxCommunicator.NET.Websocket");
+		var client = GetClient();
 
 		using (client) {
 			using (TokenHandler handler = new TokenHandler(client, "lan")) {
@@ -32,6 +39,8 @@ public class WebsocketWebserviceClientTests {
 
 
 	}
+
+	
 
 	private static void Client_OnAuthenticated(object sender, ConnectionAuthenticatedEventArgs e) {
 		Console.WriteLine("Successfully authenticated!");

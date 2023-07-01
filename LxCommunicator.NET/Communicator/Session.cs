@@ -25,6 +25,8 @@ namespace Loxone.Communicator {
 		/// The client used for communicating with the miniserver
 		/// </summary>
 		public WebserviceClient Client { get; set; }
+		public ConnectionSessionConfiguration ConnectionSessionConfiguration { get; }
+
 		/// <summary>
 		/// The permission the current user has / should have
 		/// </summary>
@@ -62,6 +64,20 @@ namespace Loxone.Communicator {
 			TokenPermission = tokenPermission;
 			DeviceUuid = deviceUuid;
 			DeviceInfo = deviceInfo;
+			GenerateAesKeyIv();
+			GetRandomSalt(4);
+		}
+
+		public Session(WebserviceClient client, ConnectionSessionConfiguration connectionSessionConfiguration) {
+			if (connectionSessionConfiguration is null) {
+				throw new ArgumentNullException(nameof(connectionSessionConfiguration));
+			}
+
+			Client = client;
+			this.ConnectionSessionConfiguration = connectionSessionConfiguration;
+			TokenPermission = this.ConnectionSessionConfiguration.TokenPermission;
+			DeviceUuid = this.ConnectionSessionConfiguration.DeviceUuid;
+			DeviceInfo = this.ConnectionSessionConfiguration.DeviceInfo;
 			GenerateAesKeyIv();
 			GetRandomSalt(4);
 		}

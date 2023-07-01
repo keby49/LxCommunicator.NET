@@ -15,14 +15,10 @@ namespace Loxone.Communicator {
 	/// Client to handle Webservices to Loxone Minsierver. Derive from <see cref="WebserviceClient"/> to implement your own Client
 	/// </summary>
 	public abstract class WebserviceClient : IDisposable {
-		/// <summary>
-		/// The ip of the miniserver
-		/// </summary>
-		internal string IP { get; set; }
-		/// <summary>
-		/// The port of the miniserver
-		/// </summary>
-		internal int Port { get; set; }
+		protected WebserviceClient(ConnectionConfiguration connectionConfiguration) {
+			this.ConnectionConfiguration = connectionConfiguration;
+		}
+
 		/// <summary>
 		/// The tokenhandler that should be used for managing the token
 		/// </summary>
@@ -31,6 +27,7 @@ namespace Loxone.Communicator {
 		/// The session object used for storing information about the connection
 		/// </summary>
 		public Session Session { get; internal set; }
+		public ConnectionConfiguration ConnectionConfiguration { get; }
 
 		/// <summary>
 		/// Establish an authenticated connection to the miniserver

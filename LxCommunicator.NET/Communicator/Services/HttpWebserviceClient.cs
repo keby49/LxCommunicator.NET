@@ -35,13 +35,7 @@ namespace Loxone.Communicator {
 		/// <returns>The Response the miniserver returns</returns>
 		public override async Task<WebserviceResponse> SendWebservice(WebserviceRequest request) {
 			WebserviceRequest encRequest = await GetEncryptedRequest(request);
-			Uri url = new UriBuilder() {
-				Scheme = "http",
-				Host = IP,
-				Port = Port,
-				Path = encRequest.Command,
-				Query = encRequest.Queries.ToString()
-			}.Uri;
+			Uri url = this.GetLoxoneCommandUri(encRequest);
 			CancellationTokenSource?.Dispose();
 			CancellationTokenSource = new CancellationTokenSource(request.Timeout);
 			HttpResponseMessage httpResponse = await HttpClient?.GetAsync(url.OriginalString, CancellationTokenSource.Token);
@@ -56,6 +50,16 @@ namespace Loxone.Communicator {
 				throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Websocket > Invalid response."));
 			}
 			return response;
+		}
+
+		private Uri GetLoxoneCommandUri(WebserviceRequest encRequest) {
+			return new UriBuilder() {
+				Scheme = "http",
+				Host = this.ConnectionConfiguration.IP,
+				Port = this.ConnectionConfiguration.Port,
+				Path = encRequest.Command,
+				Query = encRequest.Queries.ToString()
+			}.Uri;
 		}
 
 		/// <summary>
@@ -106,11 +110,13 @@ namespace Loxone.Communicator {
 		/// <param name="permissions">Permissions of the connecting user</param>
 		/// <param name="deviceUuid">Uuid of the connecting device</param>
 		/// <param name="deviceInfo">Info of the connecting device</param>
-		public HttpWebserviceClient(string ip, int port, int permissions, string deviceUuid, string deviceInfo) {
-			IP = ip;
-			Port = port;
+		public HttpWebserviceClient(ConnectionConfiguration connectionConfiguration):base(connectionConfiguration){
+			if (connectionConfiguration is null) {
+				throw new ArgumentNullException(nameof(connectionConfiguration));
+			}
+
 			HttpClient = new HttpClient();
-			Session = new Session(this, permissions, deviceUuid, deviceInfo);
+			Session = new Session(this, this.ConnectionConfiguration.SessionConfiguration);
 		}
 
 		/// <summary>
@@ -119,9 +125,7 @@ namespace Loxone.Communicator {
 		/// <param name="ip">IP adress of the miniserver</param>
 		/// <param name="port">Port of the miniserver</param>
 		/// <param name="session">Session object containing info used for connection</param>
-		public HttpWebserviceClient(string ip, int port, Session session) {
-			IP = ip;
-			Port = port;
+		public HttpWebserviceClient(ConnectionConfiguration connectionConfiguration, Session session):base(connectionConfiguration){
 			HttpClient = new HttpClient();
 			Session = session;
 		}
