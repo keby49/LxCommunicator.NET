@@ -88,7 +88,7 @@ namespace Loxone.Communicator {
 				WebSocket = new ClientWebSocket();
 				this.WebSocket.Options.KeepAliveInterval = TimeSpan.FromSeconds(1);
 
-				await WebSocket.ConnectAsync(GetLoxoneWebSocketUri(), CancellationToken.None);
+				await WebSocket.ConnectAsync(this.GetLoxoneWebSocketUri(), CancellationToken.None);
 				BeginListening();
 				string key = await Session.GetSessionKey();
 				string keyExchangeResponse = (await SendWebservice(new WebserviceRequest<string>($"jdev/sys/keyexchange/{key}", EncryptionType.None))).Value;

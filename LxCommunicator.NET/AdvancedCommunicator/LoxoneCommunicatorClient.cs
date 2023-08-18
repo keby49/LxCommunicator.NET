@@ -16,6 +16,6 @@ namespace Loxone.AdvancedCommunicator {
 	/// Client to handle websocketWebservices to loxone miniserver. Use <see cref="WebsocketWebserviceClient"/> for communicating via websocket or derive from it to create your own websocketClient.
 	/// </summary>
 	public class LoxoneCommunicatorClient  {
-	
+		//IWebsocketClient
 	}
 }

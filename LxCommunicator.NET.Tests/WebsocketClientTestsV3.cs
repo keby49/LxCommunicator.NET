@@ -30,17 +30,43 @@ public class WebsocketClientTestsV3 {
 		string received = null;
 		var receivedEvent = new ManualResetEvent(false);
 
-		client.MessageReceived.Subscribe(msg =>
+		var subscription =client.MessageReceived.Subscribe(msg =>
 		{
-			received = msg.Text;
+			received = msg.MessageType == WebSocketMessageType.Text ? msg.Text : Encoding.UTF8.GetString(msg.Binary); // msg.Text;
+
 			receivedEvent.Set();
 		});
 
 		await client.Start();
 
+		client.Send("ping");
+
 		receivedEvent.WaitOne(TimeSpan.FromSeconds(30));
 
 		Assert.NotNull(received);
+	}
+
+	[Fact]
+	public async Task OnStarting_Subscription_Deleted() {
+		using IWebsocketClient client = new WebsocketClient(WebsocketUrl);
+		string received = null;
+		var receivedEvent = new ManualResetEvent(false);
+
+		var subscription = client.MessageReceived.Subscribe(msg => {
+			received = msg.MessageType == WebSocketMessageType.Text ? msg.Text : Encoding.UTF8.GetString(msg.Binary); // msg.Text;
+
+			receivedEvent.Set();
+		});
+
+		subscription.Dispose();
+
+		await client.Start();
+
+		client.Send("ping");
+
+		receivedEvent.WaitOne(TimeSpan.FromSeconds(5));
+
+		received.Should().BeNull();
 	}
 
 	[Fact]
