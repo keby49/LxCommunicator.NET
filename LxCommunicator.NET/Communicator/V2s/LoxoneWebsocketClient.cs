@@ -17,8 +17,7 @@ using Websocket.Client;
 
 namespace Loxone.Communicator {
 
-    public class LoxoneWebsocketClient : LoxoneLanClientWithHttp, IWebserviceClient
-    {
+	public class LoxoneWebsocketClient : LoxoneLanClientWithHttp, IWebserviceClient {
 		///// <summary>
 		///// The httpCLient used for checking if the miniserver is available and getting the public key.
 		///// </summary>
@@ -229,28 +228,6 @@ namespace Loxone.Communicator {
 				default:
 				case EncryptionType.None:
 					return await this.SendMessage(wait, request);
-
-					//this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "SENDing {0}: {3}Orginal: {1}{3}ToSend: {2}", request.Encryption, request.CommandNotEncrypted, request.Command, (Environment.NewLine + "\t\t\t")));
-					//if (WebSocket == null || WebSocket.NativeClient.State != WebSocketState.Open) {
-
-					//	if (WebSocket == null) {
-					//		throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "WebSocket is null."));
-					//	}
-
-					//	if (WebSocket.NativeClient.State != WebSocketState.Open) {
-					//		throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "WebSocket.State is not open. State={0}", WebSocket.NativeClient.State));
-					//	}
-					//	//return null;
-					//}
-					//lock (Requests) {
-					//	Requests.Add(request);
-					//}
-
-					////byte[] input = Encoding.UTF8.GetBytes(request.Command);
-					////await WebSocket.Send(new ArraySegment<byte>(input, 0, input.Length), WebSocketMessageType.Text, true, CancellationToken.None);
-					//WebSocket.Send(request.Command);
-					//var responseWait = request.WaitForResponse();
-					//return responseWait;
 			}
 		}
 		private async Task<WebserviceResponse> SendMessage(bool wait, WebserviceRequest request) {
@@ -313,32 +290,21 @@ namespace Loxone.Communicator {
 		/// </summary>
 		private void BeginListening() {
 			this.WebSocket.MessageReceived.Subscribe(msg => {
-
-				//WebserviceResponse response = null;
-				//WebserviceContent content = response.GetAsWebserviceContent();
-
-
-
-				ResponseMessage m;
-
-
+				WebserviceResponse responseToHandle = null;
 				switch (msg.MessageType) {
 					case WebSocketMessageType.Text:
 						if (this.lastHeader == null) {
 							throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Message header not found."));
 						}
 
-						WebserviceResponse responseToApply = new WebserviceResponse(lastHeader, Encoding.UTF8.GetBytes(msg.Text), (int?)WebSocket?.NativeClient.CloseStatus);
+						responseToHandle = new WebserviceResponse(lastHeader, Encoding.UTF8.GetBytes(msg.Text), (int?)WebSocket?.NativeClient.CloseStatus);
 						this.lastHeader = null;
-						this.HandleByControlOrDefault(responseToApply);
-
 
 						break;
 					case WebSocketMessageType.Binary:
 						if (this.lastHeader != null) {
-							WebserviceResponse binaryResponseToApply = new WebserviceResponse(lastHeader, msg.Binary, (int?)WebSocket?.NativeClient.CloseStatus);
+							responseToHandle = new WebserviceResponse(lastHeader, msg.Binary, (int?)WebSocket?.NativeClient.CloseStatus);
 							this.lastHeader = null;
-							var handledBinary = this.HandleByControlOrDefault(binaryResponseToApply);
 						}
 						else {
 							MessageHeader header;
@@ -354,35 +320,23 @@ namespace Loxone.Communicator {
 						break;
 
 				}
+
+				if (responseToHandle != null) {
+					this.HandleResponseWithHeader(responseToHandle);
+				}
 			});
 		}
 
+		private void HandleResponseWithHeader(WebserviceResponse responseToHandle) {
+			var handled = this.HandleWebserviceResponse(responseToHandle);
+			if (handled) {
+				return;
+			}
 
-		private bool HandleByControlOrDefault(WebserviceResponse responseToApply) {
-			return this.HandleWebserviceResponse(responseToApply);
-
-			//WebserviceContent container = responseToApply.GetAsWebserviceContent();
-			////msg.Text
-			//var control = container?.Control;
-			//if (container != null) {
-			//	if (!string.IsNullOrEmpty(control)) {
-			//		var request = this.Requests.FirstOrDefault(r => r.Command == control);
-			//		if (request != null) {
-			//			if (request.TryValidateResponse(responseToApply)) {
-			//				lock (Requests) {
-			//					Requests.Remove(request);
-			//				}
-			//				return true;
-			//			}
-			//		}
-			//	}
-			//}
-			//else {
-			//	var handledWithoutControl = this.HandleWebserviceResponse(responseToApply);
-			//	return handledWithoutControl;
-			//}
-
-			//return false;
+            bool handledEventTable = this.ParseEventTable(responseToHandle.Content, responseToHandle.Header.Type);
+			if (handledEventTable) {
+				return;
+			}
 		}
 
 
@@ -502,5 +456,5 @@ namespace Loxone.Communicator {
 
 		}
 
-    }
+	}
 }
