@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Net;
 using System.Text;
 
@@ -93,7 +94,12 @@ namespace Loxone.Communicator {
 				throw new WebserviceException("Parse MessageHeader failed: " + ex.Message, ex);
 			}
 		}
-	}
+
+        public override string ToString()
+        {
+			return string.Format(CultureInfo.InvariantCulture, "Header: Type={0}, Estimated={1}, Length={2}", this.Type, this.Estimated, this.Length);
+        }
+    }
 
 	/// <summary>
 	/// A container for a response received by the miniserver.

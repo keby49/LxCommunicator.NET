@@ -4,6 +4,8 @@ using System.Collections.Specialized;
 using System.Globalization;
 using System.Text;
 using System.Threading;
+using NLog;
+using Org.BouncyCastle.Asn1.Ocsp;
 
 namespace Loxone.Communicator {
 	/// <summary>
@@ -23,14 +25,20 @@ namespace Loxone.Communicator {
 		/// The command that should be sent to the miniserver
 		/// </summary>
 		public string Command { get; set; }
+
+		public string CommandNotEscaped { get; set; }
+
+		public string CommandNotEncrypted { get; set; }
 		/// <summary>
 		/// Whether the command requires token authentication or not
 		/// </summary>
 		public bool NeedAuthentication { get; set; } = true;
-		/// <summary>
-		/// A collection of queries that should be appended to the command
-		/// </summary>
-		public NameValueCollection Queries { get; internal set; } = System.Web.HttpUtility.ParseQueryString("");
+        protected Logger Logger { get; }
+
+        /// <summary>
+        /// A collection of queries that should be appended to the command
+        /// </summary>
+        public NameValueCollection Queries { get; internal set; } = System.Web.HttpUtility.ParseQueryString("");
 		/// <summary>
 		/// How the command should be encrypted
 		/// </summary>
@@ -55,6 +63,7 @@ namespace Loxone.Communicator {
 			Command = command;
 			Encryption = encryption;
 			NeedAuthentication = needAuthentication;
+            this.Logger = LogManager.GetLogger("WebserviceRequest");
 		}
 
 		/// <summary>
@@ -64,23 +73,25 @@ namespace Loxone.Communicator {
 		/// <returns>Whether the validation succeeded or not</returns>
 		public virtual bool TryValidateResponse(WebserviceResponse response) {
 			if (response != null) {
-				Response = response;
+                Response = response;
+				this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "TryValidateResponse HANDLED REQUEST {0}: {3}Orginal: {1}{3}Sent: {2}", this.Encryption, this.CommandNotEncrypted, this.Command, Environment.NewLine));
 				ResponseReceived.Set();
-				return true;
-			}
-			else {
+                return true;
+            }
+            else {
+				this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "TryValidateResponse NOT_HANDLED REQUEST 1 {0}: {3}Orginal: {1}{3}Sent: {2}", this.Encryption, this.CommandNotEncrypted, this.Command, Environment.NewLine));
 				return false;
-			}
-		}
+            }
+        }
 
-		/// <summary>
-		/// Waits until a matching WebserviceResponse is received
-		/// </summary>
-		/// <returns>The received WebserviceResponse</returns>
-		public WebserviceResponse WaitForResponse() {
-			if (!ResponseReceived.WaitOne(Timeout)) {
+        /// <summary>
+        /// Waits until a matching WebserviceResponse is received
+        /// </summary>
+        /// <returns>The received WebserviceResponse</returns>
+        public WebserviceResponse WaitForResponse() {
+            if (!ResponseReceived.WaitOne(Timeout)) {
 
-				throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "WebSocket > Timeout"));
+				//throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "WebSocket > Timeout"));
 				Response = null;
 			}
 			return Response;
@@ -128,18 +139,23 @@ namespace Loxone.Communicator {
 		public override bool TryValidateResponse(WebserviceResponse response) {
 			WebserviceContent content = response.GetAsWebserviceContent();
 			if (content == null) {
-				throw new WebserviceException("Sending the Webservice failed!", response);
+				this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "TryValidateResponse NOT_HANDLED REQUEST TYPED 1 {0}: {3}Orginal: {1}{3}Sent: {2}", this.Encryption, this.CommandNotEncrypted, this.Command, Environment.NewLine));
+				return false;
+				//throw new WebserviceException($"Validation of response failed. Webservice content was deserialized. {response.Header}", response);
 			}
-			if (content.Code != System.Net.HttpStatusCode.OK) {
+			if (content != null && content.Code != System.Net.HttpStatusCode.OK) {
 				throw new WebserviceException($"Sending the Webservice failed! ({content.Code})", response);
+				return false;
 			}
 			content = response.GetAsWebserviceContent<T>();
-			if (DefaultWebserviceComparer.Comparer.Compare(Command, content.Control) == 0) {
+			if (DefaultWebserviceComparer.Comparer.Compare(this.CommandNotEscaped ?? this.Command, content.Control) == 0) {
 				Response = response;
+				this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "TryValidateResponse HANDLED REQUEST TYPED {0}: {3}Orginal: {1}{3}Sent: {2}", this.Encryption, this.CommandNotEncrypted, this.Command, Environment.NewLine));
 				ResponseReceived.Set();
 				return true;
 			}
 			else {
+				this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "TryValidateResponse NOT_HANDLED REQUEST TYPED 2 {0}: {3}Orginal: {1}{3}Sent: {2}{3}Received:{4}{3}NotEscaped={5}", this.Encryption, this.CommandNotEncrypted, this.Command, (Environment.NewLine + "\t\t\t"), content.Control, this.CommandNotEscaped));
 				return false;
 			}
 		}
@@ -177,6 +193,10 @@ namespace Loxone.Communicator {
 			if (value.StartsWith("jdev", StringComparison.OrdinalIgnoreCase)) {
 				value = value.Substring(1);
 			}
+
+			//value = value.Replace("+", "%2B");
+			//value = Uri.EscapeDataString(value);
+
 			return value;
 		}
 		/// <summary>

@@ -7,10 +7,11 @@ using NLog;
 using NLog.Config;
 using NLog.Targets;
 using System.Text;
+using Loxone.Communicator;
 
 namespace LxCommunicator.NET.Tests;
 
-public class WebsocketClientTestsV3 {
+public class WebsocketClientTestsV3 : WebsocketClientTestsV3Base {
 
 	private const string constIP = "192-168-50-50.504f94a181b0.dyndns.loxonecloud.com";
 	private const string constPort = "80";
@@ -18,10 +19,17 @@ public class WebsocketClientTestsV3 {
 	private static readonly Uri WebsocketUrl = new Uri(constUrl);
 	private readonly ITestOutputHelper _output;
 
-	public WebsocketClientTestsV3(ITestOutputHelper output) {
-		_output = output;
-		_output.WriteLine("Test");
-		InitLogging(_output);
+
+	private static ConnectionConfiguration GetConfig() => new ConnectionConfiguration(
+		"192-168-50-50.504f94a181b0.dyndns.loxonecloud.com",
+		80,
+		2,
+		"098802e1-02b4-603c-ffffeee000d80cfd",
+		"LxCommunicator.NET.Websocket"
+	) {
+	};
+
+	public WebsocketClientTestsV3(ITestOutputHelper output) : base(output) {
 	}
 
 	[Fact]
@@ -30,14 +38,26 @@ public class WebsocketClientTestsV3 {
 		string received = null;
 		var receivedEvent = new ManualResetEvent(false);
 
-		var subscription =client.MessageReceived.Subscribe(msg =>
-		{
+		var reconnectionHappenedEvent = new ManualResetEvent(false);
+
+		client.ReconnectionHappened.Subscribe(xx => {
+			reconnectionHappenedEvent.Set();
+		});
+
+		var subscription = client.MessageReceived.Subscribe(msg => {
 			received = msg.MessageType == WebSocketMessageType.Text ? msg.Text : Encoding.UTF8.GetString(msg.Binary); // msg.Text;
+
+			_output.WriteLine($"Received {received}");
+
+			//00000000: 0306 0000 0000 0000                      ........
+
 
 			receivedEvent.Set();
 		});
 
 		await client.Start();
+
+		reconnectionHappenedEvent.WaitOne(TimeSpan.FromSeconds(30));
 
 		client.Send("ping");
 
@@ -86,7 +106,7 @@ public class WebsocketClientTestsV3 {
 			//.Where(x => x.Text.ToLower().Contains("pong"))
 			.Subscribe(msg => {
 				receivedCount++;
-				received = msg.MessageType == WebSocketMessageType.Text ? msg.Text :  Encoding.UTF8.GetString(msg.Binary); // msg.Text;
+				received = msg.MessageType == WebSocketMessageType.Text ? msg.Text : Encoding.UTF8.GetString(msg.Binary); // msg.Text;
 
 				if (receivedCount >= 7)
 					receivedEvent.Set();
@@ -109,8 +129,7 @@ public class WebsocketClientTestsV3 {
 		string received = null;
 		var receivedEvent = new ManualResetEvent(false);
 
-		client.MessageReceived.Subscribe(msg =>
-		{
+		client.MessageReceived.Subscribe(msg => {
 			var msgText = msg.Text ?? string.Empty;
 			if (msgText.Contains("400")) {
 				received = msgText;
@@ -144,8 +163,7 @@ public class WebsocketClientTestsV3 {
 		client.IsReconnectionEnabled = false;
 		client.ReconnectTimeout = TimeSpan.FromSeconds(2);
 
-		client.MessageReceived.Subscribe(msg =>
-		{
+		client.MessageReceived.Subscribe(msg => {
 			receivedCount++;
 			if (receivedCount >= 2)
 				receivedEvent.Set();
@@ -173,8 +191,7 @@ public class WebsocketClientTestsV3 {
 		client.IsReconnectionEnabled = true;
 		client.ReconnectTimeout = TimeSpan.FromSeconds(5);
 
-		client.MessageReceived.Subscribe(msg =>
-		{
+		client.MessageReceived.Subscribe(msg => {
 			receivedCount++;
 			if (receivedCount >= 2)
 				client.IsReconnectionEnabled = false;
@@ -197,22 +214,19 @@ public class WebsocketClientTestsV3 {
 		var disconnectionCount = 0;
 		DisconnectionInfo disconnectionInfo = null;
 
-		client.MessageReceived.Subscribe(msg =>
-		{
+		client.MessageReceived.Subscribe(msg => {
 			receivedCount++;
 			received = msg.Text;
 		});
 
-		client.DisconnectionHappened.Subscribe(x =>
-		{
+		client.DisconnectionHappened.Subscribe(x => {
 			disconnectionCount++;
 			disconnectionInfo = x;
 		});
 
 		await client.Start();
 
-		_ = Task.Run(async () =>
-		{
+		_ = Task.Run(async () => {
 			client.Send("ping");
 			await Task.Delay(2000);
 			var success = await client.Stop(WebSocketCloseStatus.InternalServerError, "server error 500");
@@ -241,24 +255,24 @@ public class WebsocketClientTestsV3 {
 	}
 
 
-	private static void InitLogging(ITestOutputHelper output) {
+	//private static void InitLogging(ITestOutputHelper output) {
 
-		var config = new LoggingConfiguration();
-		var consoleTarget = new ConsoleTarget {
-			Name = "console",
-			Layout = "${longdate}|${level:uppercase=true}|${logger}|${message}",
-		};
+	//	var config = new LoggingConfiguration();
+	//	var consoleTarget = new ConsoleTarget {
+	//		Name = "console",
+	//		Layout = "${longdate}|${level:uppercase=true}|${logger}|${message}",
+	//	};
 
 
-		var testTarget = new TestOutcomeTarget(output);
+	//	var testTarget = new TestOutcomeTarget(output);
 
-		//config.AddRule(LogLevel.Debug, LogLevel.Fatal, consoleTarget, "*");
-		config.AddRule(LogLevel.Trace, LogLevel.Fatal, testTarget, "*");
-		LogManager.Configuration = config;
+	//	//config.AddRule(LogLevel.Debug, LogLevel.Fatal, consoleTarget, "*");
+	//	config.AddRule(LogLevel.Trace, LogLevel.Fatal, testTarget, "*");
+	//	LogManager.Configuration = config;
 
-		//Log.Logger = new LoggerConfiguration()
-		//	.MinimumLevel.Verbose()
-		//	.WriteTo.TestOutput(output, LogEventLevel.Verbose)
-		//	.CreateLogger();
-	}
+	//	//Log.Logger = new LoggerConfiguration()
+	//	//	.MinimumLevel.Verbose()
+	//	//	.WriteTo.TestOutput(output, LogEventLevel.Verbose)
+	//	//	.CreateLogger();
+	//}
 }

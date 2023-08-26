@@ -54,13 +54,13 @@ namespace Loxone.Communicator {
 		/// <summary>
 		/// The tokenHandler containing the used token
 		/// </summary>
-		public TokenHandler TokenHandler;
+		public ITokenHandler TokenHandler;
 
 		/// <summary>
 		/// Initialises the eventArgs
 		/// </summary>
 		/// <param name="handler">The tokenHandler used for authentication</param>
-		public ConnectionAuthenticatedEventArgs(TokenHandler handler) {
+		public ConnectionAuthenticatedEventArgs(ITokenHandler handler) {
 			TokenHandler = handler;
 		}
 	}

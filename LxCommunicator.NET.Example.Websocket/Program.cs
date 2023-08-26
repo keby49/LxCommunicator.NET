@@ -25,7 +25,7 @@ namespace LxCommunicator.NET.Example.Websocket {
 					client.OnReceiveEventTable += Client_OnReceiveEventTable;
 					client.OnAuthenticated += Client_OnAuthenticated;
 					await client.Authenticate(handler);
-					var response = await client.SendWebservice(new WebserviceRequest<string>("jdev/sps/enablebinstatusupdate", EncryptionType.None));
+					var response = await client.SendWebserviceAndWait(new WebserviceRequest<string>("jdev/sps/enablebinstatusupdate", EncryptionType.None));
 
 					string result = response.Value;
 					Console.ReadLine();

@@ -10,10 +10,8 @@ namespace Loxone.Communicator {
 	/// A handler used for managing the Token. Can create, renew and kill tokens.
 	/// When enabled, the <see cref="TokenHandler"/> also updates the token automatically
 	/// </summary>
-	public class TokenHandler : IDisposable, ITokenHandler {
-		/// <summary>
-		/// The webserviceClient used for communication with the miniserver
-		/// </summary>
+	public class TokenHandlerV3 : IDisposable, ITokenHandler {
+
 		public IWebserviceClient WsClient { get; private set; }
 
 		public IWebserviceClient ApiClient { get; private set; }
@@ -63,13 +61,13 @@ namespace Loxone.Communicator {
 		/// <summary>
 		/// Initialises a new tokenHandler object.
 		/// </summary>
-		/// <param name="client">The webserviceClient that should be used for communication</param>
+		/// <param name="clientToAutentificate">The webserviceClient that should be used for communication</param>
 		/// <param name="user">The username of the user</param>
 		/// <param name="token">The token object that should be used (optional)</param>
 		/// <param name="canRenewToken">Whether or not the tokenHandler should be allowed to renew the token automatically (true if not set!)</param>
-		public TokenHandler(WebserviceClient client, string user, Token token = null, bool canRenewToken = true) {
-			WsClient = client;
-			this.ApiClient = client;
+		public TokenHandlerV3(IWebserviceClient apiClient, IWebserviceClient clientToAutentificate, string user, Token token = null, bool canRenewToken = true) {
+			WsClient = clientToAutentificate;
+			this.ApiClient = apiClient;
 			Username = user;
 			Token = token;
 			NeedRenewToken = canRenewToken;
@@ -138,7 +136,9 @@ namespace Loxone.Communicator {
 				NeedAuthentication = false
 			};
 
-            WebserviceContent<Token> response = await this.WsClient.SendWebserviceAndWait(request);
+			//var response = await this.WsClient.SendWebservice(request);
+
+			var response = await this.WsClient.SendWebserviceAndWait(request);
 
 			Token = response.Value;
 
@@ -173,7 +173,7 @@ namespace Loxone.Communicator {
 			string hash = await GetTokenHash();
 			try {
 				var request = new WebserviceRequest<object>($"jdev/sys/killtoken/{hash}/{Username}", EncryptionType.RequestAndResponse) { Timeout = 0 };
-				var response = await WsClient.SendWebserviceAndWait(request);
+				await WsClient.SendWebservice(request);
 			}
 			catch {
 			}

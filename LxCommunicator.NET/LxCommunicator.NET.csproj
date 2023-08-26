@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <Compile Remove="AdvancedCommunicator\_olld\WebsocketWebserviceClient.cs" />
+    <Compile Remove="Communicator\V2s\LoxoneWebsocketClientA1.cs" />
   </ItemGroup>
 	
 
@@ -47,6 +48,7 @@
       <PackagePath>\</PackagePath>
     </None>
     <None Include="AdvancedCommunicator\_olld\WebsocketWebserviceClient.cs" />
+    <None Include="Communicator\V2s\LoxoneWebsocketClientA1.cs" />
   </ItemGroup>
 
 </Project>

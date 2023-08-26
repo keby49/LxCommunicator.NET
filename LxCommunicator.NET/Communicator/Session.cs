@@ -88,7 +88,7 @@ namespace Loxone.Communicator {
 		/// <param name="username">The username of the user trying to authenticate</param>
 		/// <returns>A userKey object containing the key, the salt and the hashAlgorythm</returns>
 		public async Task<UserKey> GetUserKey(string username) {
-			return (await Client.SendWebservice(new WebserviceRequest<UserKey>($"jdev/sys/getkey2/{username}", EncryptionType.None) { NeedAuthentication = false })).Value;
+			return (await Client.SendWebserviceAndWait(new WebserviceRequest<UserKey>($"jdev/sys/getkey2/{username}", EncryptionType.None) { NeedAuthentication = false })).Value;
 		}
 
 		/// <summary>
@@ -97,7 +97,7 @@ namespace Loxone.Communicator {
 		/// <returns>A string containing the public key</returns>
 		public async Task<string> GetMiniserverPublicKey() {
 			if (PublicKey == null) {
-				string response = (await Client.SendWebservice(new WebserviceRequest<string>($"jdev/sys/getPublicKey", EncryptionType.None) { NeedAuthentication = false })).Value;
+				string response = (await Client.SendWebserviceAndWait(new WebserviceRequest<string>($"jdev/sys/getPublicKey", EncryptionType.None) { NeedAuthentication = false })).Value;
 
 				string publicKey = response.Replace("-----BEGIN CERTIFICATE-----", "-----BEGIN PUBLIC KEY-----\n");
 				publicKey = publicKey.Replace("-----END CERTIFICATE-----", "\n-----END PUBLIC KEY-----");

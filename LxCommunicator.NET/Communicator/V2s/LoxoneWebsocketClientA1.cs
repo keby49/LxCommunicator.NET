@@ -10,12 +10,11 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Websocket.Client;
 
 namespace Loxone.Communicator {
-	/// <summary>
-	/// Client to handle websocketWebservices to loxone miniserver. Use <see cref="WebsocketWebserviceClient"/> for communicating via websocket or derive from it to create your own websocketClient.
-	/// </summary>
-	public class WebsocketWebserviceClient : WebserviceClient {
+	
+	public class LoxoneWebsocketClient : WebserviceClient {
 		/// <summary>
 		/// The httpCLient used for checking if the miniserver is available and getting the public key.
 		/// </summary>
@@ -24,7 +23,7 @@ namespace Loxone.Communicator {
 		/// <summary>
 		/// The websocket the webservices will be sent with.
 		/// </summary>
-		public ClientWebSocket WebSocket;
+		public WebsocketClient WebSocket;
 
 		/// <summary>
 		/// A Listener to catch every incoming message from the miniserver
@@ -67,7 +66,7 @@ namespace Loxone.Communicator {
 		/// <param name="permissions">The permissions the user should have on the server</param>
 		/// <param name="deviceUuid">The uuid of the current device</param>
 		/// <param name="deviceInfo">A short info of the current device</param>
-		public WebsocketWebserviceClient(ConnectionConfiguration connectionConfiguration)
+		public LoxoneWebsocketClient(ConnectionConfiguration connectionConfiguration)
 			: base(connectionConfiguration) {
 			if (connectionConfiguration is null) {
 				throw new ArgumentNullException(nameof(connectionConfiguration));
@@ -83,27 +82,38 @@ namespace Loxone.Communicator {
 		/// After the event fired, the connection to the miniserver can be used.
 		/// </summary>
 		/// <param name="handler">The tokenhandler that should be used</param>
-		public override async Task Authenticate(ITokenHandler handler) {
+		public override async Task Authenticate(TokenHandler handler) {
 			if (await MiniserverReachable()) {
-				WebSocket = new ClientWebSocket();
-				this.WebSocket.Options.KeepAliveInterval = TimeSpan.FromSeconds(1);
+				var factory = new Func<ClientWebSocket>(() => new ClientWebSocket {
+					Options =
+					{
+						KeepAliveInterval = TimeSpan.FromSeconds(1),
+					}
+				});
 
-				await WebSocket.ConnectAsync(this.GetLoxoneWebSocketUri(), CancellationToken.None);
+				//this.WebSocket.Options.KeepAliveInterval = TimeSpan.FromSeconds(1);
+
+				Uri url = this.GetLoxoneWebSocketUri();
+				WebSocket = new WebsocketClient(url, factory);
+				await this.WebSocket.Start();
+				//await WebSocket.ConnectAsync( CancellationToken.None);
+
 				BeginListening();
+
 				string key = await Session.GetSessionKey();
-				string keyExchangeResponse = (await SendWebserviceAndWait(new WebserviceRequest<string>($"jdev/sys/keyexchange/{key}", EncryptionType.None))).Value;
+				string keyExchangeResponse = (await SendWebservice(new WebserviceRequest<string>($"jdev/sys/keyexchange/{key}", EncryptionType.None))).Value;
 				TokenHandler = handler;
 				if (TokenHandler?.Token != null) {
-					string hash = await TokenHandler?.GetTokenHash();
-					string response = (await SendWebserviceAndWait(new WebserviceRequest<string>($"authwithtoken/{hash}/{TokenHandler.Username}", EncryptionType.RequestAndResponse))).Value;
+					string hash = await this.TokenHandler?.GetTokenHash();
+					string response = (await SendWebservice(new WebserviceRequest<string>($"authwithtoken/{hash}/{TokenHandler.Username}", EncryptionType.RequestAndResponse))).Value;
 					AuthResponse authResponse = JsonConvert.DeserializeObject<AuthResponse>(response);
 					if (authResponse.ValidUntil != default && authResponse.TokenRights != default) {
-						OnAuthenticated.Invoke(this, new ConnectionAuthenticatedEventArgs(TokenHandler));
+						this.OnAuthenticated.Invoke(this, new ConnectionAuthenticatedEventArgs(TokenHandler));
 						return;
 					}
 				}
 				if (await TokenHandler.RequestNewToken()) {
-					OnAuthenticated.Invoke(this, new ConnectionAuthenticatedEventArgs(TokenHandler));
+					this.OnAuthenticated.Invoke(this, new ConnectionAuthenticatedEventArgs(TokenHandler));
 					return;
 				}
 				await HttpClient?.Authenticate(new TokenHandler(HttpClient, handler.Username, handler.Token, false));
@@ -120,7 +130,7 @@ namespace Loxone.Communicator {
 		/// <returns>Wheter the miniserver is reachable or not</returns>
 		public async Task<bool> MiniserverReachable() {
 			try {
-				string response = (await HttpClient?.SendWebserviceAndWait(new WebserviceRequest<string>($"jdev/cfg/api", EncryptionType.None) { NeedAuthentication = false })).Value;
+				string response = (await HttpClient?.SendWebservice(new WebserviceRequest<string>($"jdev/cfg/api", EncryptionType.None) { NeedAuthentication = false })).Value;
 
 				if (response != null && response != "") {
 					return true;
@@ -138,19 +148,20 @@ namespace Loxone.Communicator {
 		/// The listener starts to wait for messsages from the miniserver
 		/// </summary>
 		private void BeginListening() {
-			if (Listener != null) {
-				TokenSource.Cancel();
-				Listener = null;
-			}
-			Listener = Task.Run(async () => {
-				while (WebSocket.State == WebSocketState.Open) {
-					WebserviceResponse response = await ReceiveWebsocketMessage(1024, TokenSource.Token);
-					if (!HandleWebserviceResponse(response) && !ParseEventTable(response.Content, response.Header.Type)) {
-						OnReceiveMessge?.Invoke(WebSocket, new MessageReceivedEventArgs(response));
-					}
-					await Task.Delay(10);
-				}
-			}, TokenSource.Token);
+			return;
+			//if (Listener != null) {
+			//	TokenSource.Cancel();
+			//	Listener = null;
+			//}
+			//Listener = Task.Run(async () => {
+			//	while (WebSocket.State == WebSocketState.Open) {
+			//		WebserviceResponse response = await ReceiveWebsocketMessage(1024, TokenSource.Token);
+			//		if (!HandleWebserviceResponse(response) && !ParseEventTable(response.Content, response.Header.Type)) {
+			//			OnReceiveMessge?.Invoke(WebSocket, new MessageReceivedEventArgs(response));
+			//		}
+			//		await Task.Delay(10);
+			//	}
+			//}, TokenSource.Token);
 		}
 
 		/// <summary>
@@ -158,39 +169,37 @@ namespace Loxone.Communicator {
 		/// </summary>
 		/// <param name="request">The Request that should be sent</param>
 		/// <returns>The Response the miniserver returns</returns>
-		public override async Task<WebserviceResponse> SendWebserviceAndWait(WebserviceRequest request) {
+		public override async Task<WebserviceResponse> SendWebservice(WebserviceRequest request) {
 			switch (request?.Encryption) {
 				case EncryptionType.Request:
-					request.CommandNotEncrypted = request.Command;
 					request.Command = Uri.EscapeDataString(Cryptography.AesEncrypt($"salt/{Session.Salt}/{request.Command}", Session));
-					request.Command = $"jdev/sys/enc/{request.Command}";					
+					request.Command = $"jdev/sys/enc/{request.Command}";
 					request.Encryption = EncryptionType.None;
-					return await SendWebserviceAndWait(request);
+					return await SendWebservice(request);
 
 				case EncryptionType.RequestAndResponse:
-					request.CommandNotEncrypted = request.Command;
 					string command = Uri.EscapeDataString(Cryptography.AesEncrypt($"salt/{Session.Salt}/{request.Command}", Session));
 					command = $"jdev/sys/fenc/{command}";
 					WebserviceRequest encryptedRequest = new WebserviceRequest(command, EncryptionType.None);
-					WebserviceResponse encrypedResponse = await SendWebserviceAndWait(encryptedRequest);
+					WebserviceResponse encrypedResponse = await SendWebservice(encryptedRequest);
 					if (encrypedResponse == null) {
-						request.TryValidateResponse(new WebserviceResponse(null, null, (int?)WebSocket?.CloseStatus));
+						request.TryValidateResponse(new WebserviceResponse(null, null, (int?)WebSocket?.NativeClient.CloseStatus));
 					}
 					else {
-						request.TryValidateResponse(new WebserviceResponse(encrypedResponse.Header, Encoding.UTF8.GetBytes(Cryptography.AesDecrypt(encrypedResponse.GetAsStringContent(), Session)), (int?)WebSocket?.CloseStatus));
+						request.TryValidateResponse(new WebserviceResponse(encrypedResponse.Header, Encoding.UTF8.GetBytes(Cryptography.AesDecrypt(encrypedResponse.GetAsStringContent(), Session)), (int?)WebSocket?.NativeClient.CloseStatus));
 					}
 					return request.WaitForResponse();
 
 				default:
 				case EncryptionType.None:
-					if (WebSocket == null || WebSocket.State != WebSocketState.Open) {
+					if (WebSocket == null || WebSocket.NativeClient.State != WebSocketState.Open) {
 
 						if (WebSocket == null) {
 							throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "WebSocket is null."));
 						}
 
-						if (WebSocket.State != WebSocketState.Open) {
-							throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "WebSocket.State is not open. State={0}", WebSocket.State));
+						if (WebSocket.NativeClient.State != WebSocketState.Open) {
+							throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "WebSocket.State is not open. State={0}", WebSocket.NativeClient.State));
 						}
 						//return null;
 					}
@@ -199,76 +208,78 @@ namespace Loxone.Communicator {
 					}
 
 					byte[] input = Encoding.UTF8.GetBytes(request.Command);
-					await WebSocket.SendAsync(new ArraySegment<byte>(input, 0, input.Length), WebSocketMessageType.Text, true, CancellationToken.None);
+					//await WebSocket.Send(new ArraySegment<byte>(input, 0, input.Length), WebSocketMessageType.Text, true, CancellationToken.None);
+					WebSocket.Send(request.Command);
 					var responseWait = request.WaitForResponse();
 					return responseWait;
 			}
 		}
 
-		/// <summary>
-		/// Receives a webservice from the Miniservers
-		/// </summary>
-		/// <param name="bufferSize">The size of the buffer that should be used</param>
-		/// <param name="token">the cancellationToken to cancel receiving messages</param>
-		/// <returns>The received webserviceResponse</returns>
-		private async Task<WebserviceResponse> ReceiveWebsocketMessage(uint bufferSize, CancellationToken token) {
-			byte[] data;
-			MessageHeader header;
-			do {
-				data = await InternalReceiveWebsocketMessage(bufferSize, token);
-				if (!MessageHeader.TryParse(data, out header)) {
-					throw new WebserviceException("Received incomplete Data: \n" + Encoding.UTF8.GetString(data));
-				}
-			} while (header == null || header.Estimated);
-			data = await InternalReceiveWebsocketMessage(header.Length, TokenSource.Token);
-			return new WebserviceResponse(header, data, (int?)WebSocket?.CloseStatus);
-		}
 
-		/// <summary>
-		/// Internally receives messages from the websocket
-		/// </summary>
-		/// <param name="bufferSize">The bufferSize that should be used</param>
-		/// <param name="token">The cancellationToken for cancelling receiving the response</param>
-		/// <returns></returns>
-		private async Task<byte[]> InternalReceiveWebsocketMessage(uint bufferSize, CancellationToken token) {
-			WebSocketReceiveResult result;
-			byte[] buffer = new byte[bufferSize <= 0 ? 1024 : bufferSize];
-			int offset = 0;
-			using (MemoryStream stream = new MemoryStream()) {
-				do {
-					result = await WebSocket?.ReceiveAsync(new ArraySegment<byte>(buffer, offset, Math.Max(0, buffer.Length - offset)), CancellationToken.None);
-					offset += result.Count;
-					if (offset >= buffer.Length) {
-						await stream.WriteAsync(buffer, 0, buffer.Length, token);
-						offset = 0;
-					}
-				} while (result != null && !result.EndOfMessage);
+		///// <summary>
+		///// Receives a webservice from the Miniservers
+		///// </summary>
+		///// <param name="bufferSize">The size of the buffer that should be used</param>
+		///// <param name="token">the cancellationToken to cancel receiving messages</param>
+		///// <returns>The received webserviceResponse</returns>
+		//private async Task<WebserviceResponse> ReceiveWebsocketMessage(uint bufferSize, CancellationToken token) {
+		//	byte[] data;
+		//	MessageHeader header;
+		//	do {
+		//		data = await InternalReceiveWebsocketMessage(bufferSize, token);
+		//		if (!MessageHeader.TryParse(data, out header)) {
+		//			throw new WebserviceException("Received incomplete Data: \n" + Encoding.UTF8.GetString(data));
+		//		}
+		//	} while (header == null || header.Estimated);
+		//	data = await InternalReceiveWebsocketMessage(header.Length, TokenSource.Token);
+		//	return new WebserviceResponse(header, data, (int?)WebSocket?.NativeClient.CloseStatus);
+		//}
 
-				if (result.CloseStatus != null) {
+		///// <summary>
+		///// Internally receives messages from the websocket
+		///// </summary>
+		///// <param name="bufferSize">The bufferSize that should be used</param>
+		///// <param name="token">The cancellationToken for cancelling receiving the response</param>
+		///// <returns></returns>
+		//private async Task<byte[]> InternalReceiveWebsocketMessage(uint bufferSize, CancellationToken token) {
+		//	WebSocketReceiveResult result;
+		//	byte[] buffer = new byte[bufferSize <= 0 ? 1024 : bufferSize];
+		//	int offset = 0;
+		//	using (MemoryStream stream = new MemoryStream()) {
+		//		do {
+		//			result = await WebSocket?.ReceiveAsync(new ArraySegment<byte>(buffer, offset, Math.Max(0, buffer.Length - offset)), CancellationToken.None);
+		//			offset += result.Count;
+		//			if (offset >= buffer.Length) {
+		//				await stream.WriteAsync(buffer, 0, buffer.Length, token);
+		//				offset = 0;
+		//			}
+		//		} while (result != null && !result.EndOfMessage);
 
-				}
+		//		if (result.CloseStatus != null) {
 
-				await stream.WriteAsync(buffer, 0, offset, token);
-				return stream.ToArray();
-			}
-		}
+		//		}
 
-		/// <summary>
-		/// Handles the assignment of the responses to the right requests.
-		/// </summary>
-		/// <param name="response">The response that should be handled</param>
-		/// <returns>Whether or not the reponse could be assigned to a request</returns>
-		private bool HandleWebserviceResponse(WebserviceResponse response) {
-			foreach (WebserviceRequest request in Enumerable.Reverse(Requests)) {
-				if (request.TryValidateResponse(response)) {
-					lock (Requests) {
-						Requests.Remove(request);
-					}
-					return true;
-				}
-			}
-			return false;
-		}
+		//		await stream.WriteAsync(buffer, 0, offset, token);
+		//		return stream.ToArray();
+		//	}
+		//}
+
+		///// <summary>
+		///// Handles the assignment of the responses to the right requests.
+		///// </summary>
+		///// <param name="response">The response that should be handled</param>
+		///// <returns>Whether or not the reponse could be assigned to a request</returns>
+		//private bool HandleWebserviceResponse(WebserviceResponse response) {
+		//	foreach (WebserviceRequest request in Enumerable.Reverse(Requests)) {
+		//		if (request.TryValidateResponse(response)) {
+		//			lock (Requests) {
+		//				Requests.Remove(request);
+		//			}
+		//			return true;
+		//		}
+		//	}
+		//	return false;
+		//}
 
 		/// <summary>
 		/// Parses a received message into an eventTable.

@@ -63,7 +63,16 @@ namespace Loxone.Communicator {
 			if (input == null) {
 				return null;
 			}
-			byte[] inputBytes = Convert.FromBase64String(input);
+			byte[] inputBytes = null;
+
+			try {
+				inputBytes = Convert.FromBase64String(input);
+			}
+			catch (FormatException ex) {
+
+				throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "{0}.{1}Input:{1}{2}", ex.Message, Environment.NewLine, input ?? "NULL"), ex);
+			}
+
 			AesEngine engine = new AesEngine();
 			CbcBlockCipher blockCipher = new CbcBlockCipher(engine);
 			PaddedBufferedBlockCipher cipher = new PaddedBufferedBlockCipher(blockCipher, new ZeroBytePadding());

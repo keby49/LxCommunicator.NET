@@ -21,7 +21,7 @@ namespace Loxone.Communicator {
 		/// Provides info required for the authentication on the miniserver
 		/// </summary>
 		/// <param name="handler">The tokenHandler that should be used</param>
-		public override Task Authenticate(TokenHandler handler) {
+		public override Task Authenticate(ITokenHandler handler) {
 			TokenHandler = handler;
 			return Task.CompletedTask;
 		}
@@ -33,23 +33,39 @@ namespace Loxone.Communicator {
 		/// </summary>
 		/// <param name="request">The Request that should be sent</param>
 		/// <returns>The Response the miniserver returns</returns>
-		public override async Task<WebserviceResponse> SendWebservice(WebserviceRequest request) {
+		public override async Task<WebserviceResponse> SendWebserviceAndWait(WebserviceRequest request) {
+
 			WebserviceRequest encRequest = await GetEncryptedRequest(request);
+
 			Uri url = this.GetLoxoneCommandUri(encRequest);
+
 			CancellationTokenSource?.Dispose();
 			CancellationTokenSource = new CancellationTokenSource(request.Timeout);
+
 			HttpResponseMessage httpResponse = await HttpClient?.GetAsync(url.OriginalString, CancellationTokenSource.Token);
 			byte[] responseContent = await httpResponse?.Content.ReadAsByteArrayAsync();
+
 			CancellationTokenSource?.Dispose();
-			if (httpResponse.IsSuccessStatusCode && request.Encryption == EncryptionType.RequestAndResponse) {//decypt response if needed
+
+			if (
+				httpResponse.IsSuccessStatusCode
+				&&
+				request.Encryption == EncryptionType.RequestAndResponse
+				) {
+				//decypt response if needed
 				responseContent = Encoding.UTF8.GetBytes(Cryptography.AesDecrypt(Encoding.UTF8.GetString(responseContent), Session));
 			}
+
 			WebserviceResponse response = new WebserviceResponse(null, responseContent, (int)httpResponse.StatusCode);
 			var responseIsValid = encRequest.TryValidateResponse(response);
 			if (!responseIsValid) {
 				throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Websocket > Invalid response."));
 			}
 			return response;
+		}
+
+		public override async Task<WebserviceResponse> SendApiRequest(WebserviceRequest request) {
+			return await this.SendWebserviceAndWait(request);
 		}
 
 		private Uri GetLoxoneCommandUri(WebserviceRequest encRequest) {
@@ -110,7 +126,7 @@ namespace Loxone.Communicator {
 		/// <param name="permissions">Permissions of the connecting user</param>
 		/// <param name="deviceUuid">Uuid of the connecting device</param>
 		/// <param name="deviceInfo">Info of the connecting device</param>
-		public HttpWebserviceClient(ConnectionConfiguration connectionConfiguration):base(connectionConfiguration){
+		public HttpWebserviceClient(ConnectionConfiguration connectionConfiguration) : base(connectionConfiguration) {
 			if (connectionConfiguration is null) {
 				throw new ArgumentNullException(nameof(connectionConfiguration));
 			}
@@ -125,7 +141,7 @@ namespace Loxone.Communicator {
 		/// <param name="ip">IP adress of the miniserver</param>
 		/// <param name="port">Port of the miniserver</param>
 		/// <param name="session">Session object containing info used for connection</param>
-		public HttpWebserviceClient(ConnectionConfiguration connectionConfiguration, Session session):base(connectionConfiguration){
+		public HttpWebserviceClient(ConnectionConfiguration connectionConfiguration, Session session) : base(connectionConfiguration) {
 			HttpClient = new HttpClient();
 			Session = session;
 		}
