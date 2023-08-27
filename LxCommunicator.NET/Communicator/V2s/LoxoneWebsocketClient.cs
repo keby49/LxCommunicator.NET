@@ -16,6 +16,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Websocket.Client;
+using Websocket.Client.Models;
 
 namespace Loxone.Communicator {
 
@@ -34,24 +35,6 @@ namespace Loxone.Communicator {
 		/// A Listener to catch every incoming message from the miniserver
 		/// </summary>
 		private Task Listener;
-
-		/// <summary>
-		/// Event, fired when a not expected Message is received.
-		/// Contains the message in the eventArgs
-		/// </summary>
-		private event EventHandler<MessageReceivedEventArgs> OnReceiveMessge;
-
-		///// <summary>
-		///// Event, fired when an eventTable is received and parsed.
-		///// Contains the eventTable in the eventArgs
-		///// </summary>
-		//public event EventHandler<EventStatesParsedEventArgs> OnReceiveEventTable;
-
-		/// <summary>
-		/// Event, fired when the connection is authenticated or a new token is received.
-		/// Contains the tokenHandler with the used token in the eventArgs.
-		/// </summary>
-		public event EventHandler<ConnectionAuthenticatedEventArgs> OnAuthenticated;
 
 		/// <summary>
 		/// The cancellationTokenSource used for cancelling the listener and receiving messages
@@ -87,43 +70,66 @@ namespace Loxone.Communicator {
 		/// After the event fired, the connection to the miniserver can be used.
 		/// </summary>
 		/// <param name="handler">The tokenhandler that should be used</param>
-		public async Task Authenticate(ITokenHandler handler) {
-			if (await MiniserverReachable()) {
-				var factory = new Func<ClientWebSocket>(() => new ClientWebSocket {
-					Options =
-					{
-						KeepAliveInterval = TimeSpan.FromSeconds(1),
-					}
-				});
+		public async Task HandleAuthenticate() {
 
-				//this.WebSocket.Options.KeepAliveInterval = TimeSpan.FromSeconds(1);
+			string key = await Session.GetSessionKey();
+			var requestKey = new WebserviceRequest<string>($"jdev/sys/keyexchange/{key}", EncryptionType.None);
+			var responseKey = await SendWebserviceAndWait(requestKey);
+			string keyExchangeResponse = responseKey.Value;
 
-				Uri url = this.GetLoxoneWebSocketUri();
-				WebSocket = new WebsocketClient(url, factory);
-				await this.WebSocket.Start();
-				//await WebSocket.ConnectAsync( CancellationToken.None);
-
-				this.BeginListening();
-
-				string key = await Session.GetSessionKey();
-				string keyExchangeResponse = (await SendWebserviceAndWait(new WebserviceRequest<string>($"jdev/sys/keyexchange/{key}", EncryptionType.None))).Value;
-				TokenHandler = handler;
-				if (TokenHandler?.Token != null) {
-					string hash = await TokenHandler?.GetTokenHash();
-					string response = (await SendWebserviceAndWait(new WebserviceRequest<string>($"authwithtoken/{hash}/{TokenHandler.Username}", EncryptionType.RequestAndResponse))).Value;
-					AuthResponse authResponse = JsonConvert.DeserializeObject<AuthResponse>(response);
-					if (authResponse.ValidUntil != default && authResponse.TokenRights != default) {
-						OnAuthenticated.Invoke(this, new ConnectionAuthenticatedEventArgs(TokenHandler));
-						return;
-					}
-				}
-				if (await TokenHandler.RequestNewToken()) {
-					if (OnAuthenticated != null) {
-						OnAuthenticated.Invoke(this, new ConnectionAuthenticatedEventArgs(TokenHandler));
-					}
+			if (TokenHandler?.Token != null) {
+				string hash = await TokenHandler?.GetTokenHash();
+				string response = (await SendWebserviceAndWait(new WebserviceRequest<string>($"authwithtoken/{hash}/{TokenHandler.Username}", EncryptionType.RequestAndResponse))).Value;
+				AuthResponse authResponse = JsonConvert.DeserializeObject<AuthResponse>(response);
+				if (authResponse.ValidUntil != default && authResponse.TokenRights != default) {
+					LoxoneMessageSystem message = new LoxoneMessageSystem(LoxoneMessageSystemType.Authenticated);
+					this.loxoneMessageReceived.OnNext(message);
 					return;
 				}
 			}
+			if (await TokenHandler.RequestNewToken()) {
+				LoxoneMessageSystem message = new LoxoneMessageSystem(LoxoneMessageSystemType.Authenticated);
+				this.loxoneMessageReceived.OnNext(message);
+				return;
+			}
+		}
+
+		public async Task StartAndConnection(ITokenHandler handler) {
+			if (await MiniserverReachable()) {
+				this.TokenHandler = handler;
+				await CreateClientAndStartToListen();
+				await HandleAuthenticate();
+			}
+		}
+
+		public async Task CreateClientAndStartToListen() {
+			var factory = new Func<ClientWebSocket>(() => new ClientWebSocket {
+				Options =
+								{
+						KeepAliveInterval = TimeSpan.FromSeconds(1),
+
+					}
+			});
+
+			Uri url = this.GetLoxoneWebSocketUri();
+			WebSocket = new WebsocketClient(url, factory);
+			this.WebSocket.IsReconnectionEnabled = this.ConnectionConfiguration.IsReconnectionEnabled;
+			this.WebSocket.ReconnectTimeout = this.ConnectionConfiguration.ReconnectTimeout;
+
+			this.WebSocket.ReconnectionHappened.Subscribe(async info => {
+				LoxoneMessageSystem message = new LoxoneMessageSystem<ReconnectionInfo>(LoxoneMessageSystemType.Reconnection, info);
+				this.loxoneMessageReceived.OnNext(message);
+
+				//await HandleAuthenticate();
+			});
+
+			this.WebSocket.DisconnectionHappened.Subscribe(async info => {
+				LoxoneMessageSystem message = new LoxoneMessageSystem<DisconnectionInfo>(LoxoneMessageSystemType.Disconnection, info);
+				this.loxoneMessageReceived.OnNext(message);
+			});
+
+			await this.WebSocket.Start();
+			this.BeginListening();
 		}
 
 		private Uri GetLoxoneWebSocketUri() {
@@ -261,7 +267,7 @@ namespace Loxone.Communicator {
 		/// </summary>
 		/// <param name="response">The response that should be handled</param>
 		/// <returns>Whether or not the reponse could be assigned to a request</returns>
-		private bool HandleWebserviceResponse(LoxoneMessage loxoneMessage) {
+		private bool HandleWebserviceResponse(LoxoneMessageWithResponse loxoneMessage) {
 			if (Requests.Count == 0) {
 				this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "NO REQUESTs TO HANDLE."));
 			}
@@ -332,7 +338,7 @@ namespace Loxone.Communicator {
 
 
 		private void HandleResponseWithHeader(WebserviceResponse responseToHandle) {
-			var message = new LoxoneMessage(responseToHandle.Header, responseToHandle, LoxoneMessageType.Uknown) {
+			var message = new LoxoneMessageWithResponse(responseToHandle.Header, responseToHandle, LoxoneMessageType.Uknown) {
 			};
 
 			if (this.HandleWebserviceResponse(message)) {
@@ -404,7 +410,7 @@ namespace Loxone.Communicator {
 		/// <param name="content">The message that should be parsed</param>
 		/// <param name="type">The expected type of the eventTable</param>
 		/// <returns>Whether or not parsing the eventTable was successful</returns>
-		private bool ParseEventTable(LoxoneMessage loxoneMessage) {
+		private bool ParseEventTable(LoxoneMessageWithResponse loxoneMessage) {
 			byte[] content = loxoneMessage.RawResponse.Content;
 			MessageType type = loxoneMessage.Header.Type;
 

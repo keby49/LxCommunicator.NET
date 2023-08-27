@@ -22,7 +22,7 @@ public class LoxoneAuthentificationTests : WebsocketClientTestsV3Base {
 		using (var loxoneWebsocketClient = this.GetLoxoneWebsocketClient())
 		using (TokenHandlerV3 handler = new TokenHandlerV3(loxoneWebsocketClient, user.UserName)) {
 			handler.SetPassword(user.UserPassword);
-			await loxoneWebsocketClient.Authenticate(handler);
+			await loxoneWebsocketClient.StartAndConnection(handler);
 			var versionRequest = new WebserviceRequest<string>("jdev/cfg/version", EncryptionType.Request);
 			string version = (await loxoneWebsocketClient.SendWebserviceAndWait(versionRequest)).Value;
 			Console.WriteLine($"Version: {version}");

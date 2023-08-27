@@ -19,10 +19,13 @@ public class LoxoneClientTests : WebsocketClientTestsV3Base {
 	[Fact]
 	public async Task OnStarting_ShouldGetInfoResponse() {
 		var user = GetUser();
-		using (var loxoneClient = this.GetLoxoneClient()) {
+		using (var loxoneClient = this.GetLoxoneClient(c => {
+			c.ConnectionConfiguration.IsReconnectionEnabled = false;
+		})) {
 			await loxoneClient.StartAndAuthenticate();
 
 			loxoneClient.MessageReceivedAll.Subscribe(async (message) => {
+
 				if (message.MessageType == LoxoneMessageType.EventStates) {
 
 				}

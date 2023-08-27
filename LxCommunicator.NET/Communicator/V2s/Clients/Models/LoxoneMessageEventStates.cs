@@ -11,11 +11,11 @@ namespace Loxone.Communicator {
 	/// <summary>
 	/// A container for a response received by the miniserver.
 	/// </summary>
-	public class LoxoneMessageEventStates : LoxoneMessage {
+	public class LoxoneMessageEventStates : LoxoneMessageWithResponse {
 		public LoxoneMessageEventStates(MessageHeader header, WebserviceResponse rawResponse) : base(header, rawResponse, LoxoneMessageType.EventStates) {
 		}
 
-		public LoxoneMessageEventStates(LoxoneMessage loxoneMessage) : base(loxoneMessage.Header, loxoneMessage.RawResponse, LoxoneMessageType.EventStates) {
+		public LoxoneMessageEventStates(LoxoneMessageWithResponse loxoneMessage) : base(loxoneMessage.Header, loxoneMessage.RawResponse, LoxoneMessageType.EventStates) {
 		}
 
 		public List<EventState> EventStates { get; set; }

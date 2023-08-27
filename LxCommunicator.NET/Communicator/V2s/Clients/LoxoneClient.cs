@@ -54,6 +54,7 @@ namespace Loxone.Communicator {
 			}
 
 			this.client = new LoxoneWebsocketClient(this.LoxoneClientConfiguration.ConnectionConfiguration);
+
 			this.loxoneMessageReceivedSubscription = this.client.LoxoneMessageReceived.Subscribe(msg => {
 				this.messageReceivedAll.OnNext(msg);
 			});
@@ -61,7 +62,7 @@ namespace Loxone.Communicator {
 
 			this.handler = new TokenHandlerV3(this.client, this.LoxoneClientConfiguration.LoxoneUser.UserName);
 			handler.SetPassword(this.LoxoneClientConfiguration.LoxoneUser.UserPassword);
-			await this.client.Authenticate(handler);
+			await this.client.StartAndConnection(handler);
 		}
 
 		public async Task StopAndKillToken() {
@@ -84,7 +85,7 @@ namespace Loxone.Communicator {
 				this.client = null;
 			}
 
-			if(this.loxoneMessageReceivedSubscription != null) {
+			if (this.loxoneMessageReceivedSubscription != null) {
 				this.loxoneMessageReceivedSubscription.Dispose();
 				this.loxoneMessageReceivedSubscription = null;
 			}

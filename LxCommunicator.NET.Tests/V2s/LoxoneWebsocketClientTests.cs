@@ -35,10 +35,8 @@ public class LoxoneWebsocketClientTests : WebsocketClientTestsV3Base {
 			handler = new TokenHandlerV3(wsClient, user.UserName);
 
 			handler.SetPassword(user.UserPassword);
-			//wsClient.OnReceiveEventTable += Client_OnReceiveEventTable;
-			wsClient.OnAuthenticated += Client_OnAuthenticated;
 			
-			await wsClient.Authenticate(handler);
+			await wsClient.StartAndConnection(handler);
 			wsClient.SendWebserviceAndWait(new WebserviceRequest<string>("jdev/sps/enablebinstatusupdate", EncryptionType.None));
 
 			//receivedUpdates.WaitOne(TimeSpan.FromSeconds(30));

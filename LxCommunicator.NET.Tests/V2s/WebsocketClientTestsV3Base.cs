@@ -49,12 +49,21 @@ public class WebsocketClientTestsV3Base {
 	}
 
 
-	protected LoxoneClient GetLoxoneClient() {
+	protected LoxoneClient GetLoxoneClient(Action<LoxoneClientConfiguration> changeConfig = null) {
 		var connection = this.GetConfig();
-		return new LoxoneClient(new LoxoneClientConfiguration {
+
+		var resultConfig = new LoxoneClientConfiguration {
 			ConnectionConfiguration = connection,
 			LoxoneUser = this.GetUser(),
-		});
+		};
+
+		if (changeConfig != null) {
+			changeConfig(resultConfig);
+		}
+
+		var result = new LoxoneClient(resultConfig);
+
+		return result;
 	}
 
 
