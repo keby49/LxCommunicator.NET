@@ -53,6 +53,7 @@ public class WebsocketClientTestsV3Base {
 		var connection = this.GetConfig();
 		return new LoxoneClient(new LoxoneClientConfiguration {
 			ConnectionConfiguration = connection,
+			LoxoneUser = this.GetUser(),
 		});
 	}
 

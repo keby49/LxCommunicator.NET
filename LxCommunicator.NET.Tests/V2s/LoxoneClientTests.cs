@@ -21,7 +21,14 @@ public class LoxoneClientTests : WebsocketClientTestsV3Base {
 		var user = GetUser();
 		using (var loxoneClient = this.GetLoxoneClient())
 		{
-			await loxoneClient.StartAndAuthenticate(user);
+			await loxoneClient.StartAndAuthenticate();
+
+			await loxoneClient.SendKeepalive();
+			Thread.Sleep(100);
+			await loxoneClient.SendKeepalive();
+			Thread.Sleep(100);
+			await loxoneClient.SendKeepalive();
+			Thread.Sleep(100);
 
 			//handler.SetPassword(user.UserPassword);
 			//await loxoneClient.Authenticate(handler);

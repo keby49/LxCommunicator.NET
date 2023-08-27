@@ -42,14 +42,14 @@ namespace Loxone.Communicator {
 		// _messageReceivedSubject.OnNext(value);
 
 
-		public async Task StartAndAuthenticate(LoxoneUser loxoneUser) {
+		public async Task StartAndAuthenticate() {
 			if (this.handler != null) {
-				this.StopAndKillToken();
+				await this.StopAndKillToken();
 			}
 
 			this.client = new LoxoneWebsocketClient(this.LoxoneClientConfiguration.ConnectionConfiguration);
-			this.handler = new TokenHandlerV3(this.client, loxoneUser.UserName);
-			handler.SetPassword(loxoneUser.UserPassword);
+			this.handler = new TokenHandlerV3(this.client,this.LoxoneClientConfiguration.LoxoneUser.UserName);
+			handler.SetPassword(this.LoxoneClientConfiguration.LoxoneUser.UserPassword);
 			await this.client.Authenticate(handler);
 		}
 
@@ -72,6 +72,19 @@ namespace Loxone.Communicator {
 				this.client.Dispose();
 				this.client = null;
 			}
+		}
+
+		public async Task SendKeepalive() {
+
+			await this.EnsureConnected();
+			var keepaliveRequest = new WebserviceRequest<string>("keepalive", EncryptionType.RequestAndResponse);
+			await this.client.SendWebservice(keepaliveRequest);
+		}
+
+		private async Task EnsureConnected() {
+			await Task.CompletedTask;
+			//TODO >> Ensure connected before message
+			//if(this.client.Session)
 		}
 
 		/// <summary>
