@@ -10,8 +10,6 @@ public interface ITokenHandler
 	/// </summary>
 	IWebserviceClient WsClient { get; }
 
-	IWebserviceClient ApiClient { get; }
-
 	/// <summary>
 	/// The token used for authentication
 	/// </summary>

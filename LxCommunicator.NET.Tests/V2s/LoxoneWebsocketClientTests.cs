@@ -32,7 +32,7 @@ public class LoxoneWebsocketClientTests : WebsocketClientTestsV3Base {
 
 		tableEvents = 0;
 		using (wsClient) {
-			handler = new TokenHandlerV3(apiClient, wsClient, user.UserName);
+			handler = new TokenHandlerV3(wsClient, user.UserName);
 
 			handler.SetPassword(user.UserPassword);
 			wsClient.OnReceiveEventTable += Client_OnReceiveEventTable;

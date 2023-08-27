@@ -14,8 +14,6 @@ namespace Loxone.Communicator {
 
 		public IWebserviceClient WsClient { get; private set; }
 
-		public IWebserviceClient ApiClient { get; private set; }
-
 		/// <summary>
 		/// The token used for authentication
 		/// </summary>
@@ -65,9 +63,8 @@ namespace Loxone.Communicator {
 		/// <param name="user">The username of the user</param>
 		/// <param name="token">The token object that should be used (optional)</param>
 		/// <param name="canRenewToken">Whether or not the tokenHandler should be allowed to renew the token automatically (true if not set!)</param>
-		public TokenHandlerV3(IWebserviceClient apiClient, IWebserviceClient clientToAutentificate, string user, Token token = null, bool canRenewToken = true) {
+		public TokenHandlerV3(IWebserviceClient clientToAutentificate, string user, Token token = null, bool canRenewToken = true) {
 			WsClient = clientToAutentificate;
-			this.ApiClient = apiClient;
 			Username = user;
 			Token = token;
 			NeedRenewToken = canRenewToken;

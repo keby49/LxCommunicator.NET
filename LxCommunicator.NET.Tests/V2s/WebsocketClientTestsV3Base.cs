@@ -26,7 +26,7 @@ public class WebsocketClientTestsV3Base {
 	//	"098802e1-02b4-603c-ffffeee000d80cfd",
 	//	"LxCommunicator.NET.Websocket") { };
 
-	protected  LoxoneUser GetUser() => new LoxoneUser {
+	protected LoxoneUser GetUser() => new LoxoneUser {
 		UserName = "lan",
 		UserPassword = "JQ9Hsa9tP5xtnW",
 	};
@@ -46,6 +46,14 @@ public class WebsocketClientTestsV3Base {
 
 	protected LoxoneWebsocketClient GetLoxoneWebsocketClient() {
 		return new LoxoneWebsocketClient(this.GetConfig());
+	}
+
+
+	protected LoxoneClient GetLoxoneClient() {
+		var connection = this.GetConfig();
+		return new LoxoneClient(new LoxoneClientConfiguration {
+			ConnectionConfiguration = connection,
+		});
 	}
 
 
