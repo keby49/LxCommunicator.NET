@@ -163,7 +163,7 @@ namespace Loxone.Communicator {
 				case EncryptionType.Request:
 					request.CommandNotEncrypted = request.Command;
 					request.Command = Uri.EscapeDataString(Cryptography.AesEncrypt($"salt/{Session.Salt}/{request.Command}", Session));
-					request.Command = $"jdev/sys/enc/{request.Command}";					
+					request.Command = $"jdev/sys/enc/{request.Command}";
 					request.Encryption = EncryptionType.None;
 					return await SendWebserviceAndWait(request);
 
@@ -277,7 +277,8 @@ namespace Loxone.Communicator {
 		/// <param name="content">The message that should be parsed</param>
 		/// <param name="type">The expected type of the eventTable</param>
 		/// <returns>Whether or not parsing the eventTable was successful</returns>
-		private bool ParseEventTable(byte[] content, MessageType type) {
+		private bool ParseEventTable(MessageHeader header, byte[] content) {
+			MessageType type = header.Type;
 			List<EventState> eventStates = new List<EventState>();
 			using (BinaryReader reader = new BinaryReader(new MemoryStream(content))) {
 				try {
@@ -310,6 +311,12 @@ namespace Loxone.Communicator {
 					return false;
 				}
 			}
+
+			EventStatesLoxoneMessage message = new EventStatesLoxoneMessage {
+				Header = header,
+				EventStates = eventStates,
+			};
+
 			if (OnReceiveEventTable != null) {
 				OnReceiveEventTable.Invoke(this, new EventStatesParsedEventArgs(type, eventStates));
 				return true;

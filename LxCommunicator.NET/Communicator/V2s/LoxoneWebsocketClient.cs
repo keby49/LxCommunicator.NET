@@ -180,11 +180,6 @@ namespace Loxone.Communicator {
 			return await this.SendWebserviceInternal(true, request);
 		}
 
-
-		//Task<WebserviceResponse> IWebserviceClient.SendWebserviceAndWait(WebserviceRequest request) {
-		//	throw new NotImplementedException();
-		//}
-
 		private async Task<WebserviceResponse> SendWebserviceInternal(bool wait, WebserviceRequest request) {
 
 			switch (request?.Encryption) {
