@@ -35,7 +35,7 @@ public class LoxoneWebsocketClientTests : WebsocketClientTestsV3Base {
 			handler = new TokenHandlerV3(wsClient, user.UserName);
 
 			handler.SetPassword(user.UserPassword);
-			wsClient.OnReceiveEventTable += Client_OnReceiveEventTable;
+			//wsClient.OnReceiveEventTable += Client_OnReceiveEventTable;
 			wsClient.OnAuthenticated += Client_OnAuthenticated;
 			
 			await wsClient.Authenticate(handler);

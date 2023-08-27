@@ -10,6 +10,8 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.WebSockets;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,11 +41,11 @@ namespace Loxone.Communicator {
 		/// </summary>
 		private event EventHandler<MessageReceivedEventArgs> OnReceiveMessge;
 
-		/// <summary>
-		/// Event, fired when an eventTable is received and parsed.
-		/// Contains the eventTable in the eventArgs
-		/// </summary>
-		public event EventHandler<EventStatesParsedEventArgs> OnReceiveEventTable;
+		///// <summary>
+		///// Event, fired when an eventTable is received and parsed.
+		///// Contains the eventTable in the eventArgs
+		///// </summary>
+		//public event EventHandler<EventStatesParsedEventArgs> OnReceiveEventTable;
 
 		/// <summary>
 		/// Event, fired when the connection is authenticated or a new token is received.
@@ -259,15 +261,17 @@ namespace Loxone.Communicator {
 		/// </summary>
 		/// <param name="response">The response that should be handled</param>
 		/// <returns>Whether or not the reponse could be assigned to a request</returns>
-		private bool HandleWebserviceResponse(WebserviceResponse response) {
+		private bool HandleWebserviceResponse(LoxoneMessage loxoneMessage) {
 			if (Requests.Count == 0) {
 				this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "NO REQUESTs TO HANDLE."));
 			}
 			foreach (WebserviceRequest request in Enumerable.Reverse(Requests)) {
-				if (request.TryValidateResponse(response)) {
+				if (request.TryValidateResponse(loxoneMessage.RawResponse)) {
 					lock (Requests) {
 						Requests.Remove(request);
 						this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "REQUESTs (after validate) COUNT= {0}", this.Requests.Count));
+						loxoneMessage.Handled = true;
+						this.loxoneMessageReceived.OnNext(loxoneMessage);
 					}
 					return true;
 				}
@@ -322,16 +326,24 @@ namespace Loxone.Communicator {
 			});
 		}
 
+		private readonly Subject<LoxoneMessage> loxoneMessageReceived = new Subject<LoxoneMessage>();
+
+		public IObservable<LoxoneMessage> LoxoneMessageReceived => loxoneMessageReceived.AsObservable();
+
+
 		private void HandleResponseWithHeader(WebserviceResponse responseToHandle) {
-			var handled = this.HandleWebserviceResponse(responseToHandle);
-			if (handled) {
+			var message = new LoxoneMessage(responseToHandle.Header, responseToHandle, LoxoneMessageType.Uknown) {
+			};
+
+			if (this.HandleWebserviceResponse(message)) {
 				return;
 			}
 
-            bool handledEventTable = this.ParseEventTable(responseToHandle.Content, responseToHandle.Header.Type);
-			if (handledEventTable) {
+			if (this.ParseEventTable(message)) {
 				return;
 			}
+
+			this.loxoneMessageReceived.OnNext(message);
 		}
 
 
@@ -392,7 +404,10 @@ namespace Loxone.Communicator {
 		/// <param name="content">The message that should be parsed</param>
 		/// <param name="type">The expected type of the eventTable</param>
 		/// <returns>Whether or not parsing the eventTable was successful</returns>
-		private bool ParseEventTable(byte[] content, MessageType type) {
+		private bool ParseEventTable(LoxoneMessage loxoneMessage) {
+			byte[] content = loxoneMessage.RawResponse.Content;
+			MessageType type = loxoneMessage.Header.Type;
+
 			List<EventState> eventStates = new List<EventState>();
 			using (BinaryReader reader = new BinaryReader(new MemoryStream(content))) {
 				try {
@@ -425,13 +440,14 @@ namespace Loxone.Communicator {
 					return false;
 				}
 			}
-			if (OnReceiveEventTable != null) {
-				OnReceiveEventTable.Invoke(this, new EventStatesParsedEventArgs(type, eventStates));
-				return true;
-			}
-			else {
-				return false;
-			}
+
+			LoxoneMessageEventStates message = new LoxoneMessageEventStates(loxoneMessage) {
+				Handled = true,
+				EventStates = eventStates,
+			};
+
+			this.loxoneMessageReceived.OnNext(message);
+			return true;
 		}
 
 
@@ -444,6 +460,7 @@ namespace Loxone.Communicator {
 			TokenSource?.Dispose();
 			WebSocket?.Dispose();
 			Requests.Clear();
+			loxoneMessageReceived.OnCompleted();
 		}
 
 		public async Task<WebserviceContent<T>> SendApiRequest<T>(WebserviceRequest<T> request) {

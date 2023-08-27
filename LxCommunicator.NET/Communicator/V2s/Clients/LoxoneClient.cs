@@ -24,6 +24,7 @@ namespace Loxone.Communicator {
 		private static readonly object LockObject = new object();
 
 		private LoxoneWebsocketClient client;
+		private IDisposable loxoneMessageReceivedSubscription;
 		private TokenHandlerV3 handler;
 
 
@@ -32,14 +33,19 @@ namespace Loxone.Communicator {
 			this.LoxoneClientConfiguration = loxoneClientConfiguration ?? throw new ArgumentNullException(nameof(loxoneClientConfiguration));
 		}
 
-		private readonly Subject<ResponseMessage> _messageReceivedSubject = new Subject<ResponseMessage>();
+		//private readonly Subject<ResponseMessage> _messageReceivedSubject = new Subject<ResponseMessage>();
 
-		public IObservable<ResponseMessage> MessageReceived => _messageReceivedSubject.AsObservable();
+		//public IObservable<ResponseMessage> MessageReceived => _messageReceivedSubject.AsObservable();
+
+
+
+		private readonly Subject<LoxoneMessage> messageReceivedAll = new Subject<LoxoneMessage>();
+
+		public IObservable<LoxoneMessage> MessageReceivedAll => messageReceivedAll.AsObservable();
 
 		public LoxoneClientConfiguration LoxoneClientConfiguration { get; }
 
 
-		// _messageReceivedSubject.OnNext(value);
 
 
 		public async Task StartAndAuthenticate() {
@@ -48,7 +54,12 @@ namespace Loxone.Communicator {
 			}
 
 			this.client = new LoxoneWebsocketClient(this.LoxoneClientConfiguration.ConnectionConfiguration);
-			this.handler = new TokenHandlerV3(this.client,this.LoxoneClientConfiguration.LoxoneUser.UserName);
+			this.loxoneMessageReceivedSubscription = this.client.LoxoneMessageReceived.Subscribe(msg => {
+				this.messageReceivedAll.OnNext(msg);
+			});
+
+
+			this.handler = new TokenHandlerV3(this.client, this.LoxoneClientConfiguration.LoxoneUser.UserName);
 			handler.SetPassword(this.LoxoneClientConfiguration.LoxoneUser.UserPassword);
 			await this.client.Authenticate(handler);
 		}
@@ -72,6 +83,19 @@ namespace Loxone.Communicator {
 				this.client.Dispose();
 				this.client = null;
 			}
+
+			if(this.loxoneMessageReceivedSubscription != null) {
+				this.loxoneMessageReceivedSubscription.Dispose();
+				this.loxoneMessageReceivedSubscription = null;
+			}
+		}
+		public async Task<bool> EnablebInStatusUpdate() {
+
+			await this.EnsureConnected();
+			var request = new WebserviceRequest<string>("jdev/sps/enablebinstatusupdate", EncryptionType.None);
+			var response = await this.client.SendWebserviceAndWait(request);
+			string result = response.Value;
+			return result == "1";
 		}
 
 		public async Task SendKeepalive() {
@@ -91,7 +115,7 @@ namespace Loxone.Communicator {
 		/// Disposes the WebserviceClient
 		/// </summary>
 		public async virtual void Dispose() {
-			_messageReceivedSubject.OnCompleted();
+			this.messageReceivedAll.OnCompleted();
 			await this.StopAndKillToken();
 		}
 	}

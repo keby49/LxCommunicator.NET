@@ -19,16 +19,26 @@ public class LoxoneClientTests : WebsocketClientTestsV3Base {
 	[Fact]
 	public async Task OnStarting_ShouldGetInfoResponse() {
 		var user = GetUser();
-		using (var loxoneClient = this.GetLoxoneClient())
-		{
+		using (var loxoneClient = this.GetLoxoneClient()) {
 			await loxoneClient.StartAndAuthenticate();
 
-			await loxoneClient.SendKeepalive();
-			Thread.Sleep(100);
-			await loxoneClient.SendKeepalive();
-			Thread.Sleep(100);
-			await loxoneClient.SendKeepalive();
-			Thread.Sleep(100);
+			loxoneClient.MessageReceivedAll.Subscribe(async (message) => {
+				if (message.MessageType == LoxoneMessageType.EventStates) {
+
+				}
+			});
+
+			await loxoneClient.EnablebInStatusUpdate();
+
+			//await loxoneClient.SendKeepalive();
+			//Thread.Sleep(100);
+			//await loxoneClient.SendKeepalive();
+			//Thread.Sleep(100);
+			//await loxoneClient.SendKeepalive();
+			//Thread.Sleep(100);
+
+			Thread.Sleep(1000);
+
 
 			//handler.SetPassword(user.UserPassword);
 			//await loxoneClient.Authenticate(handler);
@@ -60,6 +70,8 @@ public class LoxoneClientTests : WebsocketClientTestsV3Base {
 
 			//await handler.KillToken();
 		}
+
+		Thread.Sleep(100);
 	}
 
 }

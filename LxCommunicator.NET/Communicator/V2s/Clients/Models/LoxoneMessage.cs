@@ -11,14 +11,21 @@ namespace Loxone.Communicator {
 	/// A container for a response received by the miniserver.
 	/// </summary>
 	public class LoxoneMessage {
+		public LoxoneMessage(MessageHeader header, WebserviceResponse rawResponse, LoxoneMessageType messageType) {
+			Header = header;
+			RawResponse = rawResponse;
+			MessageType = messageType;
+		}
+
 		/// <summary>
 		/// The header of the message. Contains information about the type and the length of the message.
 		/// </summary>
 		public MessageHeader Header { get; set; }
 
-		/// <summary>
-		/// The error / success code the webserviceClient returned
-		/// </summary>
-		public int? ClientCode { get; set; }
+		public WebserviceResponse RawResponse { get; set; }
+
+		public bool Handled { get; set; }	
+
+		public LoxoneMessageType MessageType { get; set; }
 	}
 }
