@@ -15,6 +15,7 @@ using System.Reactive.Subjects;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using Websocket.Client;
 using Websocket.Client.Models;
 
@@ -45,6 +46,8 @@ namespace Loxone.Communicator {
 		/// List of all sent requests that wait for a response
 		/// </summary>
 		private readonly List<WebserviceRequest> Requests = new List<WebserviceRequest>();
+
+		private System.Timers.Timer keepAliveTimer;
 
 		/// <summary>
 		/// Initialises a new instance of the websocketWebserviceClient.
@@ -82,12 +85,14 @@ namespace Loxone.Communicator {
 				string response = (await SendWebserviceAndWait(new WebserviceRequest<string>($"authwithtoken/{hash}/{TokenHandler.Username}", EncryptionType.RequestAndResponse))).Value;
 				AuthResponse authResponse = JsonConvert.DeserializeObject<AuthResponse>(response);
 				if (authResponse.ValidUntil != default && authResponse.TokenRights != default) {
+					this.Authentificated = true;
 					LoxoneMessageSystem message = new LoxoneMessageSystem(LoxoneMessageSystemType.Authenticated);
 					this.loxoneMessageReceived.OnNext(message);
 					return;
 				}
 			}
 			if (await TokenHandler.RequestNewToken()) {
+				this.Authentificated = true;
 				LoxoneMessageSystem message = new LoxoneMessageSystem(LoxoneMessageSystemType.Authenticated);
 				this.loxoneMessageReceived.OnNext(message);
 				return;
@@ -104,11 +109,9 @@ namespace Loxone.Communicator {
 
 		public async Task CreateClientAndStartToListen() {
 			var factory = new Func<ClientWebSocket>(() => new ClientWebSocket {
-				Options =
-								{
-						KeepAliveInterval = TimeSpan.FromSeconds(1),
-
-					}
+				Options = {
+					KeepAliveInterval = this.ConnectionConfiguration.KeepAliveInterval.HasValue ? this.ConnectionConfiguration.KeepAliveInterval.Value : default(TimeSpan),
+				},
 			});
 
 			Uri url = this.GetLoxoneWebSocketUri();
@@ -128,10 +131,30 @@ namespace Loxone.Communicator {
 				this.loxoneMessageReceived.OnNext(message);
 			});
 
+
+			this.SetKeepAliveTimer();
+
 			await this.WebSocket.Start();
 			this.BeginListening();
 		}
 
+		private void SetKeepAliveTimer() {
+			if (this.ConnectionConfiguration.KeepAliveInterval != null) {
+				// Create a timer with a two second interval.
+				keepAliveTimer = new System.Timers.Timer(this.ConnectionConfiguration.KeepAliveInterval.Value.TotalMilliseconds);
+				// Hook up the Elapsed event for the timer. 
+				keepAliveTimer.Elapsed += OnTimedEvent;
+				keepAliveTimer.AutoReset = true;
+				keepAliveTimer.Enabled = true;
+			}
+		}
+
+		private void OnTimedEvent(Object source, ElapsedEventArgs e) {
+			if (this.Authentificated) {
+				LoxoneMessageSystem message = new LoxoneMessageSystem(LoxoneMessageSystemType.Keepalive);
+				this.loxoneMessageReceived.OnNext(message);
+			}
+		}
 		private Uri GetLoxoneWebSocketUri() {
 			return new Uri($"ws://{this.ConnectionConfiguration.IP}:{this.ConnectionConfiguration.Port}/ws/rfc6455");
 		}
@@ -336,6 +359,7 @@ namespace Loxone.Communicator {
 
 		public IObservable<LoxoneMessage> LoxoneMessageReceived => loxoneMessageReceived.AsObservable();
 
+		public bool Authentificated { get; private set; }
 
 		private void HandleResponseWithHeader(WebserviceResponse responseToHandle) {
 			var message = new LoxoneMessageWithResponse(responseToHandle.Header, responseToHandle, LoxoneMessageType.Uknown) {
@@ -467,6 +491,12 @@ namespace Loxone.Communicator {
 			WebSocket?.Dispose();
 			Requests.Clear();
 			loxoneMessageReceived.OnCompleted();
+
+			if (keepAliveTimer != null) {
+				this.keepAliveTimer.Stop();
+				this.keepAliveTimer.Dispose();
+				this.keepAliveTimer = null;
+			}
 		}
 
 		public async Task<WebserviceContent<T>> SendApiRequest<T>(WebserviceRequest<T> request) {

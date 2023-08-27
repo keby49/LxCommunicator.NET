@@ -27,7 +27,9 @@ namespace Loxone.Communicator {
 		public ConnectionSessionConfiguration SessionConfiguration { get; set; }
 
 		public bool IsReconnectionEnabled { get; set; } = true;
-		public TimeSpan ReconnectTimeout = TimeSpan.FromSeconds(1);
+		public TimeSpan ReconnectTimeout { get; set; } = TimeSpan.FromSeconds(1);
+
+		public TimeSpan? KeepAliveInterval { get; set; } = TimeSpan.FromSeconds(1);
 
 
 		/// <summary>

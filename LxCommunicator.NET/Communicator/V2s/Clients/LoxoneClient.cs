@@ -15,7 +15,9 @@ using System.Reactive.Subjects;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using Websocket.Client;
+using Websocket.Client.Models;
 
 namespace Loxone.Communicator {
 
@@ -26,7 +28,6 @@ namespace Loxone.Communicator {
 		private LoxoneWebsocketClient client;
 		private IDisposable loxoneMessageReceivedSubscription;
 		private TokenHandlerV3 handler;
-
 
 
 		public LoxoneClient(LoxoneClientConfiguration loxoneClientConfiguration) {
@@ -55,8 +56,19 @@ namespace Loxone.Communicator {
 
 			this.client = new LoxoneWebsocketClient(this.LoxoneClientConfiguration.ConnectionConfiguration);
 
-			this.loxoneMessageReceivedSubscription = this.client.LoxoneMessageReceived.Subscribe(msg => {
+			this.loxoneMessageReceivedSubscription = this.client.LoxoneMessageReceived.Subscribe(async msg => {
 				this.messageReceivedAll.OnNext(msg);
+
+				if (msg.MessageType == LoxoneMessageType.Systems) {
+					var systemMsg = (LoxoneMessageSystem)msg;
+					if (systemMsg != null) {
+						switch (systemMsg.LoxoneMessageSystemType) {
+							case LoxoneMessageSystemType.Keepalive:
+								await this.SendKeepalive();
+								break;
+						}
+					}
+				}
 			});
 
 
@@ -64,6 +76,7 @@ namespace Loxone.Communicator {
 			handler.SetPassword(this.LoxoneClientConfiguration.LoxoneUser.UserPassword);
 			await this.client.StartAndConnection(handler);
 		}
+
 
 		public async Task StopAndKillToken() {
 			if (
@@ -89,6 +102,8 @@ namespace Loxone.Communicator {
 				this.loxoneMessageReceivedSubscription.Dispose();
 				this.loxoneMessageReceivedSubscription = null;
 			}
+
+
 		}
 		public async Task<bool> EnablebInStatusUpdate() {
 

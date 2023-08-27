@@ -10,6 +10,7 @@ namespace Loxone.Communicator {
 		Uknown,
 		Authenticated,
 		Reconnection,
-		Disconnection
+		Disconnection,
+		Keepalive
 	}
 }

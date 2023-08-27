@@ -40,7 +40,7 @@ public class LoxoneClientTests : WebsocketClientTestsV3Base {
 			//await loxoneClient.SendKeepalive();
 			//Thread.Sleep(100);
 
-			Thread.Sleep(1000);
+			Thread.Sleep(5000);
 
 
 			//handler.SetPassword(user.UserPassword);
