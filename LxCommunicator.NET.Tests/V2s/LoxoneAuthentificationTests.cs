@@ -31,6 +31,23 @@ public class LoxoneAuthentificationTests : WebsocketClientTestsV3Base {
 				versionRequest = new WebserviceRequest<string>("jdev/cfg/version", EncryptionType.Request);
 				version = (await loxoneWebsocketClient.SendWebserviceAndWait(versionRequest)).Value;
 				Console.WriteLine($"Version: {version}");
+
+				Thread.Sleep(1000);
+				var keepaliveRequest = new WebserviceRequest<string>("keepalive", EncryptionType.RequestAndResponse);
+				await loxoneWebsocketClient.SendWebservice(keepaliveRequest);
+				Console.WriteLine($"keepalive: ok");
+
+				Thread.Sleep(1000);
+				keepaliveRequest = new WebserviceRequest<string>("keepalive", EncryptionType.RequestAndResponse);
+				loxoneWebsocketClient.SendWebservice(keepaliveRequest);
+				Console.WriteLine($"keepalive: ok");
+
+				Thread.Sleep(1000);
+				keepaliveRequest = new WebserviceRequest<string>("keepalive", EncryptionType.RequestAndResponse);
+				loxoneWebsocketClient.SendWebservice(keepaliveRequest);
+				Console.WriteLine($"keepalive: ok");
+
+
 				Thread.Sleep(100);				
 				
 				await handler.KillToken();
