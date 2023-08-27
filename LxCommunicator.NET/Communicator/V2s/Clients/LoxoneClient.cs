@@ -32,6 +32,7 @@ namespace Loxone.Communicator {
 
 		public LoxoneClient(LoxoneClientConfiguration loxoneClientConfiguration) {
 			this.LoxoneClientConfiguration = loxoneClientConfiguration ?? throw new ArgumentNullException(nameof(loxoneClientConfiguration));
+			this.MessageLogger = LogManager.GetLogger("LoxoneMessages");
 		}
 
 		//private readonly Subject<ResponseMessage> _messageReceivedSubject = new Subject<ResponseMessage>();
@@ -45,9 +46,7 @@ namespace Loxone.Communicator {
 		public IObservable<LoxoneMessage> MessageReceivedAll => messageReceivedAll.AsObservable();
 
 		public LoxoneClientConfiguration LoxoneClientConfiguration { get; }
-
-
-
+		public Logger MessageLogger { get; }
 
 		public async Task StartAndAuthenticate() {
 			if (this.handler != null) {
@@ -57,6 +56,10 @@ namespace Loxone.Communicator {
 			this.client = new LoxoneWebsocketClient(this.LoxoneClientConfiguration.ConnectionConfiguration);
 
 			this.loxoneMessageReceivedSubscription = this.client.LoxoneMessageReceived.Subscribe(async msg => {
+				if (this.LoxoneClientConfiguration.LogMessages) {
+					this.MessageLogger.Info(string.Format(CultureInfo.InvariantCulture, "Loxone message:\r\n {0}", JsonConvert.SerializeObject(msg, Formatting.Indented)));
+				}
+
 				this.messageReceivedAll.OnNext(msg);
 
 				if (msg.MessageType == LoxoneMessageType.Systems) {

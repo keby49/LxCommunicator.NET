@@ -18,5 +18,7 @@ namespace Loxone.Communicator {
 		public ConnectionConfiguration ConnectionConfiguration { get; set; }
 
 		public LoxoneUser LoxoneUser { get; set; }
+
+		public bool LogMessages { get; set; } = true;
 	}
 }
