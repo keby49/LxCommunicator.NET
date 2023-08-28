@@ -68,6 +68,8 @@ namespace Loxone.Communicator {
 			//Session.Client = HttpClient;
 		}
 
+		bool reconnected = false;
+
 		/// <summary>
 		/// Establish an authenticated connection to the miniserver. Fires the OnAuthenticated event when successfull.
 		/// After the event fired, the connection to the miniserver can be used.
@@ -80,7 +82,36 @@ namespace Loxone.Communicator {
 			var responseKey = await SendWebserviceAndWait(requestKey);
 			string keyExchangeResponse = responseKey.Value;
 
+			this.WebSocket.DisconnectionHappened.Subscribe(info => {
+
+			});
+
+			this.WebSocket.ReconnectionHappened.Subscribe(async info => {
+				if (this.reconnected) {
+					return;
+				}
+				this.reconnected = true;
+				this.TokenHandler?.CleanToken();
+				////await this.WebSocket.Start();
+				////var state = this.WebSocket.IsStarted
+				//key = await Session.GetSessionKey();
+				//requestKey = new WebserviceRequest<string>($"jdev/sys/keyexchange/{key}", EncryptionType.None);
+				//responseKey = await SendWebserviceAndWait(requestKey);
+				//keyExchangeResponse = responseKey.Value;
+
+				//if (await TokenHandler.RequestNewToken()) {
+				//	this.Authentificated = true;
+				//	LoxoneMessageSystem message = new LoxoneMessageSystem(LoxoneMessageSystemType.AuthenticatedOnReconnection);
+				//	this.loxoneMessageReceived.OnNext(message);
+				//	return;
+				//}
+			});
+
 			if (TokenHandler?.Token != null) {
+				if (this.reconnected) {
+
+				}
+
 				string hash = await TokenHandler?.GetTokenHash();
 				string response = (await SendWebserviceAndWait(new WebserviceRequest<string>($"authwithtoken/{hash}/{TokenHandler.Username}", EncryptionType.RequestAndResponse))).Value;
 				AuthResponse authResponse = JsonConvert.DeserializeObject<AuthResponse>(response);
@@ -97,6 +128,8 @@ namespace Loxone.Communicator {
 				this.loxoneMessageReceived.OnNext(message);
 				return;
 			}
+
+
 		}
 
 		public async Task StartAndConnection(ITokenHandler handler) {
@@ -215,6 +248,18 @@ namespace Loxone.Communicator {
 		}
 
 		private async Task<WebserviceResponse> SendWebserviceInternal(bool wait, WebserviceRequest request) {
+			//if (request.NeedAuthentication) {
+			//	if (this.reconnected && this.TokenHandler.Token == null) {
+					
+			//		if (await TokenHandler.RequestNewToken()) {
+			//			this.Authentificated = true;
+			//			LoxoneMessageSystem message = new LoxoneMessageSystem(LoxoneMessageSystemType.AuthenticatedOnReconnection);
+			//			this.loxoneMessageReceived.OnNext(message);
+			//		}
+
+			//		this.reconnected = false;
+			//	}
+			//}
 
 			switch (request?.Encryption) {
 				case EncryptionType.Request:
@@ -248,7 +293,11 @@ namespace Loxone.Communicator {
 						request.TryValidateResponse(new WebserviceResponse(null, null, (int?)WebSocket?.NativeClient.CloseStatus));
 					}
 					else {
+						var bad = encrypedResponse.GetAsWebserviceContent();
 
+						if (bad != null && bad.Code != System.Net.HttpStatusCode.OK) {
+							throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Encrypted response is not valid by code. Code={0}, Request={1}, Response={2}", encrypedResponse.ClientCode, request.CommandNotEncrypted ?? request.CommandNotEscaped ?? request.Command, encrypedResponse.GetAsStringContent()));
+						}
 						var decrypted = this.Decrypt(encrypedResponse.GetAsStringContent());
 						request.TryValidateResponse(new WebserviceResponse(encrypedResponse.Header, Encoding.UTF8.GetBytes(decrypted), (int?)WebSocket?.NativeClient.CloseStatus));
 					}
@@ -260,31 +309,42 @@ namespace Loxone.Communicator {
 			}
 		}
 		private async Task<WebserviceResponse> SendMessage(bool wait, WebserviceRequest request) {
-			this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "SENDing {0}: {3}Orginal: {1}{3}ToSend: {2}", request.Encryption, request.CommandNotEncrypted, request.Command, (Environment.NewLine + "\t\t\t")));
+			this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "SENDing {0}: wait={4} {3}Orginal: {1}{3}ToSend: {2}", request.Encryption, request.CommandNotEncrypted, request.Command, (Environment.NewLine + "\t\t\t"), wait));
 			if (WebSocket == null || WebSocket.NativeClient.State != WebSocketState.Open) {
 				if (WebSocket == null) {
+					this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "WebSocket is null."));
 					throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "WebSocket is null."));
 				}
 				if (WebSocket.NativeClient.State != WebSocketState.Open) {
+					this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "WebSocket.State is not open. State={0}", WebSocket.NativeClient.State));
 					throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "WebSocket.State is not open. State={0}", WebSocket.NativeClient.State));
 				}
 				//return null;
 			}
 
 			if (wait) {
+				this.Logger.Trace(string.Format(CultureInfo.InvariantCulture, "Adding request."));
 				lock (Requests) {
 					Requests.Add(request);
 				}
+				this.Logger.Trace(string.Format(CultureInfo.InvariantCulture, "Request added."));
 			}
 
 			//byte[] input = Encoding.UTF8.GetBytes(request.Command);
 			//await WebSocket.Send(new ArraySegment<byte>(input, 0, input.Length), WebSocketMessageType.Text, true, CancellationToken.None);
+
+			this.Logger.Trace(string.Format(CultureInfo.InvariantCulture, "Request sending."));
 			WebSocket.Send(request.Command);
+			this.Logger.Trace(string.Format(CultureInfo.InvariantCulture, "Request sent."));
 
 			if (!wait) {
+				this.Logger.Trace(string.Format(CultureInfo.InvariantCulture, "No wait."));
 				return null;
 			}
+
+			this.Logger.Trace(string.Format(CultureInfo.InvariantCulture, "Request response waiting."));
 			var responseWait = request.WaitForResponse();
+			this.Logger.Trace(string.Format(CultureInfo.InvariantCulture, "Request response waiting done."));
 			return responseWait;
 		}
 

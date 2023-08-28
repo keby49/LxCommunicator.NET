@@ -58,6 +58,8 @@ public interface ITokenHandler
 	/// </summary>
 	Task KillToken();
 
+	Task CleanToken();
+
 	/// <summary>
 	/// Gets the tokenHash required for authentication
 	/// </summary>

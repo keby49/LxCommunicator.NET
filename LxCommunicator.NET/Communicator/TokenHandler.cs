@@ -138,7 +138,7 @@ namespace Loxone.Communicator {
 				NeedAuthentication = false
 			};
 
-            WebserviceContent<Token> response = await this.WsClient.SendWebserviceAndWait(request);
+			WebserviceContent<Token> response = await this.WsClient.SendWebserviceAndWait(request);
 
 			Token = response.Value;
 
@@ -190,6 +190,10 @@ namespace Loxone.Communicator {
 			HMAC hmac = userKey.GetHMAC();
 			hmac.Key = Cryptography.GetByteArrayFromHex(userKey.Key);
 			return Cryptography.GetHexFromByteArray(hmac.ComputeHash(Encoding.UTF8.GetBytes(Token.JsonWebToken))).ToLower();
+		}
+
+		public async Task CleanToken() {
+			this.Token = null;
 		}
 	}
 }

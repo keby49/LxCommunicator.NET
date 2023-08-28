@@ -35,8 +35,7 @@ namespace Loxone.Communicator {
 			this.LoxoneClientConfiguration = loxoneClientConfiguration ?? throw new ArgumentNullException(nameof(loxoneClientConfiguration));
 			this.MessageLogger = LogManager.GetLogger("LoxoneMessages");
 
-			JsonConvert.DefaultSettings = (() =>
-			{
+			JsonConvert.DefaultSettings = (() => {
 				var settings = new JsonSerializerSettings();
 				settings.Converters.Add(new StringEnumConverter { });
 				return settings;
@@ -154,7 +153,7 @@ namespace Loxone.Communicator {
 		public async Task SendKeepalive() {
 
 			await this.EnsureConnected();
-			var keepaliveRequest = new WebserviceRequest<string>("keepalive", EncryptionType.RequestAndResponse);
+			var keepaliveRequest = new WebserviceRequest<string>("keepalive", EncryptionType.None);
 			await this.client.SendWebservice(keepaliveRequest);
 		}
 

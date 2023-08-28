@@ -188,5 +188,9 @@ namespace Loxone.Communicator {
 			hmac.Key = Cryptography.GetByteArrayFromHex(userKey.Key);
 			return Cryptography.GetHexFromByteArray(hmac.ComputeHash(Encoding.UTF8.GetBytes(Token.JsonWebToken))).ToLower();
 		}
+
+		public async Task CleanToken() {
+			this.Token = null;
+		}
 	}
 }
