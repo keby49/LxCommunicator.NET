@@ -104,21 +104,11 @@ namespace Loxone.Communicator {
 
 		public async Task<string> GetLoxoneStructureAsJson() {
 			var result = await this.GetTextFile(EncryptionType.None, "data/LoxAPP3.json");
-			//FileInfo f = new FileInfo("structure.json");
-			//File.WriteAllText(f.FullName, result, Encoding.UTF8);
-			//this.logger.Info(string.Format(CultureInfo.InvariantCulture, "File: {0}", f.FullName));
 			return result;
+		}
 
-			//WebserviceRequest request2 = new WebserviceRequest("data/LoxAPP3.json", EncryptionType.None);
-			//// date modified >>  “jdev/sps/LoxAPPversion3
-			//var result2 = await this.Client.SendWebservice(request2);
-			//var string2 = Encoding.UTF8.GetString(result2.Content);
-
-			////byte[] v = (byte[])result2.Content;
-			//FileInfo f = new FileInfo("structure.json");
-			//File.WriteAllText(f.FullName, string2, Encoding.UTF8);
-			//this.logger.Info(string.Format(CultureInfo.InvariantCulture, "File: {0}", f.FullName));
-			//return string2;
+		public string Decrypt(string contentToDecrypt) {
+			return this.client.Decrypt(contentToDecrypt);
 		}
 
 		public bool IsConnected() {

@@ -196,7 +196,7 @@ namespace Loxone.Communicator {
 			return await this.HttpWebserviceClient.SendWebserviceAndWait(request);
 		}
 
-		private string Decrypt(string contentToDecrypt) {
+		public string Decrypt(string contentToDecrypt) {
 			try {
 				return Cryptography.AesDecrypt(contentToDecrypt, this.Session);
 			}
