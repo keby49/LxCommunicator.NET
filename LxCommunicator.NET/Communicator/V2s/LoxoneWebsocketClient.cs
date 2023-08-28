@@ -105,6 +105,9 @@ namespace Loxone.Communicator {
 				await CreateClientAndStartToListen();
 				await HandleAuthenticate();
 			}
+			else {
+				throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Loxone not reacheble."));
+			}
 		}
 
 		public async Task CreateClientAndStartToListen() {
@@ -330,6 +333,14 @@ namespace Loxone.Communicator {
 
 						break;
 					case WebSocketMessageType.Binary:
+						if (this.lastHeader != null) {
+							MessageHeader headerSecond;
+							if (MessageHeader.TryParse(msg.Binary, out headerSecond)) {
+								// cannot have two headers
+								break;
+							}
+						}
+
 						if (this.lastHeader != null) {
 							responseToHandle = new WebserviceResponse(lastHeader, msg.Binary, (int?)WebSocket?.NativeClient.CloseStatus);
 							this.lastHeader = null;

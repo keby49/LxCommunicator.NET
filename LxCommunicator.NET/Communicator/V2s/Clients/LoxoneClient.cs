@@ -1,5 +1,6 @@
 ﻿using Loxone.Communicator.Events;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using NLog;
 using Org.BouncyCastle.Asn1.Ocsp;
 using System;
@@ -33,6 +34,13 @@ namespace Loxone.Communicator {
 		public LoxoneClient(LoxoneClientConfiguration loxoneClientConfiguration) {
 			this.LoxoneClientConfiguration = loxoneClientConfiguration ?? throw new ArgumentNullException(nameof(loxoneClientConfiguration));
 			this.MessageLogger = LogManager.GetLogger("LoxoneMessages");
+
+			JsonConvert.DefaultSettings = (() =>
+			{
+				var settings = new JsonSerializerSettings();
+				settings.Converters.Add(new StringEnumConverter { });
+				return settings;
+			});
 		}
 
 		//private readonly Subject<ResponseMessage> _messageReceivedSubject = new Subject<ResponseMessage>();
@@ -49,7 +57,7 @@ namespace Loxone.Communicator {
 		public Logger MessageLogger { get; }
 
 		public async Task StartAndAuthenticate() {
-			if (this.handler != null) {
+			if (this.handler?.Token != null) {
 				await this.StopAndKillToken();
 			}
 
@@ -57,7 +65,7 @@ namespace Loxone.Communicator {
 
 			this.loxoneMessageReceivedSubscription = this.client.LoxoneMessageReceived.Subscribe(async msg => {
 				if (this.LoxoneClientConfiguration.LogMessages) {
-					this.MessageLogger.Info(string.Format(CultureInfo.InvariantCulture, "Loxone message:\r\n {0}", JsonConvert.SerializeObject(msg, Formatting.Indented)));
+					this.MessageLogger.Info(string.Format(CultureInfo.InvariantCulture, "Loxone message: {0}", JsonConvert.SerializeObject(msg, Formatting.None)));
 				}
 
 				this.messageReceivedAll.OnNext(msg);
@@ -80,6 +88,42 @@ namespace Loxone.Communicator {
 			await this.client.StartAndConnection(handler);
 		}
 
+		public async Task SendMessage(EncryptionType encryptionType, string messageContent) {
+			WebserviceRequest request = new WebserviceRequest(messageContent, encryptionType);
+			await this.client.SendWebservice(request);
+		}
+
+		public async Task<string> GetTextFile(EncryptionType encryptionType, string fileName) {
+			WebserviceRequest request2 = new WebserviceRequest(fileName, EncryptionType.None);
+			request2.Timeout = 1000 * 120;
+			// date modified >>  “jdev/sps/LoxAPPversion3
+			var result = await this.client.SendWebserviceAndWait(request2);
+			var stringResult = Encoding.UTF8.GetString(result.Content);
+			return stringResult;
+		}
+
+		public async Task<string> GetLoxoneStructureAsJson() {
+			var result = await this.GetTextFile(EncryptionType.None, "data/LoxAPP3.json");
+			//FileInfo f = new FileInfo("structure.json");
+			//File.WriteAllText(f.FullName, result, Encoding.UTF8);
+			//this.logger.Info(string.Format(CultureInfo.InvariantCulture, "File: {0}", f.FullName));
+			return result;
+
+			//WebserviceRequest request2 = new WebserviceRequest("data/LoxAPP3.json", EncryptionType.None);
+			//// date modified >>  “jdev/sps/LoxAPPversion3
+			//var result2 = await this.Client.SendWebservice(request2);
+			//var string2 = Encoding.UTF8.GetString(result2.Content);
+
+			////byte[] v = (byte[])result2.Content;
+			//FileInfo f = new FileInfo("structure.json");
+			//File.WriteAllText(f.FullName, string2, Encoding.UTF8);
+			//this.logger.Info(string.Format(CultureInfo.InvariantCulture, "File: {0}", f.FullName));
+			//return string2;
+		}
+
+		public bool IsConnected() {
+			return this.client.WebSocket.IsRunning;
+		}
 
 		public async Task StopAndKillToken() {
 			if (

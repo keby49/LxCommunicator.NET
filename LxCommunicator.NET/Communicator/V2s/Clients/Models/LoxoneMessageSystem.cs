@@ -12,6 +12,7 @@ namespace Loxone.Communicator {
 			this.LoxoneMessageSystemType = loxoneMessageSystemType;
 		}
 
+		[JsonProperty(Order = 30)]
 		public LoxoneMessageSystemType LoxoneMessageSystemType { get; set; }
 	}
 }

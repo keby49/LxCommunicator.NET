@@ -16,11 +16,10 @@ namespace Loxone.Communicator {
 			RawResponse = rawResponse;
 		}
 
-		/// <summary>
-		/// The header of the message. Contains information about the type and the length of the message.
-		/// </summary>
+		[JsonProperty(Order = 30)]
 		public MessageHeader Header { get; set; }
 
+		[JsonProperty(Order = 50)]
 		public WebserviceResponse RawResponse { get; set; }
 	}
 }

@@ -21,6 +21,7 @@ public class LoxoneClientTests : WebsocketClientTestsV3Base {
 		var user = GetUser();
 		using (var loxoneClient = this.GetLoxoneClient(c => {
 			c.ConnectionConfiguration.IsReconnectionEnabled = false;
+			//c.ConnectionConfiguration.KeepAliveInterval = null;
 		})) {
 			await loxoneClient.StartAndAuthenticate();
 
@@ -31,7 +32,13 @@ public class LoxoneClientTests : WebsocketClientTestsV3Base {
 				}
 			});
 
-			await loxoneClient.EnablebInStatusUpdate();
+			Thread.Sleep(1000);
+
+			var resu = await loxoneClient.GetLoxoneStructureAsJson();
+
+			this.OutputHelper.WriteLine(resu);
+
+			//await loxoneClient.EnablebInStatusUpdate();
 
 			//await loxoneClient.SendKeepalive();
 			//Thread.Sleep(100);
@@ -40,7 +47,7 @@ public class LoxoneClientTests : WebsocketClientTestsV3Base {
 			//await loxoneClient.SendKeepalive();
 			//Thread.Sleep(100);
 
-			Thread.Sleep(5000);
+			//Thread.Sleep(5000);
 
 
 			//handler.SetPassword(user.UserPassword);

@@ -12,6 +12,7 @@ namespace Loxone.Communicator {
 			this.Data = data;
 		}
 
+		[JsonProperty(Order = 40)]
 		public TData Data { get; set; }
 
 	}
