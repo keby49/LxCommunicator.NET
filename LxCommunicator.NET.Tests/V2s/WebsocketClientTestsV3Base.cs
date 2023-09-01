@@ -67,13 +67,17 @@ public class WebsocketClientTestsV3Base {
 	}
 
 
-	public WebsocketClientTestsV3Base(ITestOutputHelper output) {
+	public WebsocketClientTestsV3Base(ITestOutputHelper output, bool logIntoTest = true) {
 		OutputHelper = output;
 		OutputHelper.WriteLine("Test");
-		InitLogging(OutputHelper);
+		InitLogging(OutputHelper, logIntoTest);
 	}
 
-	private static void InitLogging(ITestOutputHelper output) {
+	private static void InitLogging(ITestOutputHelper output, bool logIntoTest = true) {
+
+		if (logIntoTest == false) {
+			return;
+		}
 
 		var config = new LoggingConfiguration();
 		var consoleTarget = new ConsoleTarget {

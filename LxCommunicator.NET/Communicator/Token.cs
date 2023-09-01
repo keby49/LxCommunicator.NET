@@ -32,6 +32,10 @@ namespace Loxone.Communicator {
 		[JsonProperty("unsecurePass")]
 		public bool UnsecurePass { get; private set; }
 
+		public void SetTokenToWrong() {
+			this.JsonWebToken = "xxx";
+		}
+
 		/// <summary>
 		/// Initialises a new token object used for authentication.
 		/// </summary>

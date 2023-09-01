@@ -26,7 +26,7 @@ namespace Loxone.Communicator {
 
 		private static readonly object LockObject = new object();
 
-		private LoxoneWebsocketClient client;
+		public LoxoneWebsocketClient client;
 		private IDisposable loxoneMessageReceivedSubscription;
 		private TokenHandlerV3 handler;
 
@@ -69,6 +69,10 @@ namespace Loxone.Communicator {
 
 				this.messageReceivedAll.OnNext(msg);
 
+				//if(msg is LoxoneMessageWithResponse withResponse) {
+				//	if(withResponse.Header.Type)
+				//}
+
 				if (msg.MessageType == LoxoneMessageType.Systems) {
 					var systemMsg = (LoxoneMessageSystem)msg;
 					if (systemMsg != null) {
@@ -76,15 +80,61 @@ namespace Loxone.Communicator {
 							case LoxoneMessageSystemType.Keepalive:
 								await this.SendKeepalive();
 								break;
+							case LoxoneMessageSystemType.Reconnection:
+								await this.ReconnectAndAuthenticate();
+								break;
 						}
 					}
 				}
-			});
-
+			});			
 
 			this.handler = new TokenHandlerV3(this.client, this.LoxoneClientConfiguration.LoxoneUser.UserName);
 			handler.SetPassword(this.LoxoneClientConfiguration.LoxoneUser.UserPassword);
 			await this.client.StartAndConnection(handler);
+		}
+
+		public async Task ReconnectAndAuthenticate() {
+			//if (this.handler?.Token != null) {
+			//	await this.StopAndKillToken();
+			//}
+
+			//this.client = new LoxoneWebsocketClient(this.LoxoneClientConfiguration.ConnectionConfiguration);
+
+			//this.loxoneMessageReceivedSubscription = this.client.LoxoneMessageReceived.Subscribe(async msg => {
+			//	if (this.LoxoneClientConfiguration.LogMessages) {
+			//		this.MessageLogger.Info(string.Format(CultureInfo.InvariantCulture, "Loxone message: {0}", JsonConvert.SerializeObject(msg, Formatting.None)));
+			//	}
+
+			//	this.messageReceivedAll.OnNext(msg);
+
+			//	if (msg.MessageType == LoxoneMessageType.Systems) {
+			//		var systemMsg = (LoxoneMessageSystem)msg;
+			//		if (systemMsg != null) {
+			//			switch (systemMsg.LoxoneMessageSystemType) {
+			//				case LoxoneMessageSystemType.Keepalive:
+			//					await this.SendKeepalive();
+			//					break;
+			//			}
+			//		}
+			//	}
+			//});
+
+
+			//this.handler = new TokenHandlerV3(this.client, this.LoxoneClientConfiguration.LoxoneUser.UserName);
+			await handler.CleanToken();
+			handler.SetPassword(this.LoxoneClientConfiguration.LoxoneUser.UserPassword);
+			//await this.client.StartAndConnection(handler);
+
+			if (await this.client.MiniserverReachable()) {
+				//this.TokenHandler = handler;
+				//await this.client.CreateClientAndStartToListen();
+				await this.client.HandleAuthenticate();
+			}
+			else {
+				throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Loxone not reacheble."));
+			}
+
+			await this.EnablebInStatusUpdate();
 		}
 
 		public async Task SendMessage(EncryptionType encryptionType, string messageContent) {

@@ -156,10 +156,12 @@ namespace Loxone.Communicator {
 			this.WebSocket.ReconnectTimeout = this.ConnectionConfiguration.ReconnectTimeout;
 
 			this.WebSocket.ReconnectionHappened.Subscribe(async info => {
+
 				LoxoneMessageSystem message = new LoxoneMessageSystem<ReconnectionInfo>(LoxoneMessageSystemType.Reconnection, info);
 				this.loxoneMessageReceived.OnNext(message);
 
 				//await HandleAuthenticate();
+				//await this.ReconnectAndAuthenticate();
 			});
 
 			this.WebSocket.DisconnectionHappened.Subscribe(async info => {
@@ -174,7 +176,7 @@ namespace Loxone.Communicator {
 			this.BeginListening();
 		}
 
-		private void SetKeepAliveTimer() {
+		public void SetKeepAliveTimer() {
 			if (this.ConnectionConfiguration.KeepAliveInterval != null) {
 				// Create a timer with a two second interval.
 				keepAliveTimer = new System.Timers.Timer(this.ConnectionConfiguration.KeepAliveInterval.Value.TotalMilliseconds);

@@ -49,6 +49,10 @@ namespace Loxone.Communicator {
 		public int Timeout { get; set; } = 5000;
 
 		internal ManualResetEvent ResponseReceived = new ManualResetEvent(false);
+
+		public WebserviceRequestState RequestState { get; set; }
+		public WebserviceResponse ResponsedResponse { get; set; }
+
 		/// <summary>
 		/// The matching response to the request
 		/// </summary>
@@ -74,6 +78,7 @@ namespace Loxone.Communicator {
 		public virtual bool TryValidateResponse(WebserviceResponse response) {
 			if (response != null) {
                 Response = response;
+				this.RequestState = WebserviceRequestState.Valid;
 				this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "TryValidateResponse HANDLED REQUEST {0}: {3}Orginal: {1}{3}Sent: {2}", this.Encryption, this.CommandNotEncrypted, this.Command, Environment.NewLine));
 				ResponseReceived.Set();
                 return true;
@@ -93,7 +98,11 @@ namespace Loxone.Communicator {
 
 				//throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "WebSocket > Timeout"));
 				Response = null;
+				this.RequestState = WebserviceRequestState.Timeouted;
 			}
+
+			this.RequestState = WebserviceRequestState.RespondedInTime;
+			this.ResponsedResponse = Response;
 			return Response;
 		}
 		/// <summary>
@@ -140,16 +149,19 @@ namespace Loxone.Communicator {
 			WebserviceContent content = response.GetAsWebserviceContent();
 			if (content == null) {
 				this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "TryValidateResponse NOT_HANDLED REQUEST TYPED 1 {0}: {3}Orginal: {1}{3}Sent: {2}", this.Encryption, this.CommandNotEncrypted, this.Command, Environment.NewLine));
+				this.RequestState = WebserviceRequestState.NotValidNullContent;
 				return false;
 				//throw new WebserviceException($"Validation of response failed. Webservice content was deserialized. {response.Header}", response);
 			}
 			if (content != null && content.Code != System.Net.HttpStatusCode.OK) {
+				this.RequestState = WebserviceRequestState.NotValidWrongHttpStatusCode;
 				throw new WebserviceException($"Sending the Webservice failed! ({content.Code})", response);
 				return false;
 			}
 			content = response.GetAsWebserviceContent<T>();
 			if (DefaultWebserviceComparer.Comparer.Compare(this.CommandNotEscaped ?? this.Command, content.Control) == 0) {
 				Response = response;
+				this.RequestState = WebserviceRequestState.Valid;
 				this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "TryValidateResponse HANDLED REQUEST TYPED {0}: {3}Orginal: {1}{3}Sent: {2}", this.Encryption, this.CommandNotEncrypted, this.Command, Environment.NewLine));
 				ResponseReceived.Set();
 				return true;
