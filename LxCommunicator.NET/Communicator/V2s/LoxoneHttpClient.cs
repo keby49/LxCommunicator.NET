@@ -18,7 +18,7 @@ internal class LoxoneHttpClient {
 		"098802e1-02b4-603c-ffffeee000d80cfd",
 		"LxCommunicator.NET.Websocket") { };
 
-	private static LoxoneUser GetUser() => new LoxoneUser {
+	private static LoxoneUser GetUser() => new LoxoneUser { 
 		UserName = "lan",
 		UserPassword = "JQ9Hsa9tP5xtnW",
 	};
@@ -27,16 +27,23 @@ internal class LoxoneHttpClient {
 		return new HttpWebserviceClient(GetConfig());
 	}
 
-	private static async Task Main(string[] args) {
-		using (client = GetClient()) {
-			using (TokenHandler handler = new TokenHandler(client, "app")) {
-				handler.SetPassword("LoxLIVEpasswordTest");
-				await client.Authenticate(handler);
-				string version = (await client.SendWebserviceAndWait(new WebserviceRequest<string>("jdev/cfg/version", EncryptionType.Request))).Value;
-				Console.WriteLine($"Version: {version}");
-				await handler.KillToken();
-				Console.ReadLine();
-			}
-		}
-	}
+	//private static async Task Main(string[] args) {
+	//	using (client = GetClient()) {
+	//		using (TokenHandler handler = new TokenHandler(client, "app")) {
+	//			handler.SetPassword("LoxLIVEpasswordTest");
+	//			await client.Authenticate(handler);
+	//			var request = WebserviceRequest<string>.Create(
+	//				WebserviceRequestConfig.AuthWithEncryptionRequest(),
+	//				nameof(this.NONE),
+	//				"jdev/cfg/version"
+	//			);
+
+	//			var response = await client.SendWebserviceAndWait(request);
+	//			string version = response.Value;
+	//			Console.WriteLine($"Version: {version}");
+	//			await handler.KillToken();
+	//			Console.ReadLine();
+	//		}
+	//	}
+	//}
 }

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Net.Http;
+using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,14 +34,14 @@ namespace Loxone.Communicator {
 		/// </summary>
 		/// <param name="request">The Request that should be sent</param>
 		/// <returns>The Response the miniserver returns</returns>
-		public override async Task<WebserviceResponse> SendWebserviceAndWait(WebserviceRequest request) {
+		public override async Task<LoxoneResponseMessage> SendWebserviceAndWait(WebserviceRequest request) {
 
 			WebserviceRequest encRequest = await GetEncryptedRequest(request);
 
 			Uri url = this.GetLoxoneCommandUri(encRequest);
 
 			CancellationTokenSource?.Dispose();
-			CancellationTokenSource = new CancellationTokenSource(request.Timeout);
+			CancellationTokenSource = new CancellationTokenSource(request.Config.Timeout);
 
 			HttpResponseMessage httpResponse = await HttpClient?.GetAsync(url.OriginalString, CancellationTokenSource.Token);
 			byte[] responseContent = await httpResponse?.Content.ReadAsByteArrayAsync();
@@ -50,13 +51,16 @@ namespace Loxone.Communicator {
 			if (
 				httpResponse.IsSuccessStatusCode
 				&&
-				request.Encryption == EncryptionType.RequestAndResponse
+				request.Config.Encryption == MessageEncryptionType.RequestAndResponse
 				) {
 				//decypt response if needed
 				responseContent = Encoding.UTF8.GetBytes(Cryptography.AesDecrypt(Encoding.UTF8.GetString(responseContent), Session));
 			}
 
-			WebserviceResponse response = new WebserviceResponse(null, responseContent, (int)httpResponse.StatusCode);
+			//WebserviceResponse response = new WebserviceResponse(null, responseContent, (int)httpResponse.StatusCode);
+			ReceivedRawLoxoneWebSocketMessage responseRaw = new ReceivedRawLoxoneWebSocketMessage(responseContent, LoxoneWebSocketMessageType.BinarryMessage,(int)httpResponse.StatusCode);
+			LoxoneResponseMessage response = CreateLoxoneMessage(responseRaw);
+
 			var responseIsValid = encRequest.TryValidateResponse(response);
 			if (!responseIsValid) {
 				throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Websocket > Invalid response."));
@@ -64,7 +68,15 @@ namespace Loxone.Communicator {
 			return response;
 		}
 
-		public override async Task<WebserviceResponse> SendApiRequest(WebserviceRequest request) {
+		private static LoxoneResponseMessage CreateLoxoneMessage(ReceivedRawLoxoneWebSocketMessage responseRaw) {
+			//TODO >> MTV >> CreateLoxoneMessage >> Not implemented
+			LoxoneResponseMessage messageToHandle = LoxoneResponseParser.ParseResponseWithHeader(
+				false,
+				responseRaw, c => c, null);
+			return messageToHandle;
+		}
+
+		public override async Task<LoxoneResponseMessage> SendApiRequest(WebserviceRequest request) {
 			return await this.SendWebserviceAndWait(request);
 		}
 
@@ -88,25 +100,25 @@ namespace Loxone.Communicator {
 				return null;
 			}
 			WebserviceRequest encRequest = (WebserviceRequest)request.Clone();
-			if (request.NeedAuthentication && TokenHandler != null) {//add authentication if needed
+			if (request.Config.NeedAuthentication && TokenHandler != null) {//add authentication if needed
 				if (TokenHandler.Token == null) {
 					await TokenHandler.RequestNewToken();
 				}
 				encRequest.Queries.Add("autht", await TokenHandler.GetTokenHash());
 				encRequest.Queries.Add("user", TokenHandler.Username);
-				encRequest.NeedAuthentication = false;
-				if (encRequest.Encryption == EncryptionType.None) {
-					encRequest.Encryption = EncryptionType.Request;
+				encRequest.Config.NeedAuthentication = false;
+				if (encRequest.Config.Encryption == MessageEncryptionType.None) {
+					encRequest.Config.Encryption = MessageEncryptionType.Request;
 				}
 			}
-			switch (encRequest.Encryption) {
-				case EncryptionType.Request:
+			switch (encRequest.Config.Encryption) {
+				case MessageEncryptionType.Request:
 					encRequest.Command = "jdev/sys/enc/";
 					break;
-				case EncryptionType.RequestAndResponse:
+				case MessageEncryptionType.RequestAndResponse:
 					encRequest.Command = "jdev/sys/fenc/";
 					break;
-				case EncryptionType.None:
+				case MessageEncryptionType.None:
 				default:
 					return encRequest;
 			}
@@ -114,7 +126,7 @@ namespace Loxone.Communicator {
 			encRequest.Command += Uri.EscapeDataString(Cryptography.AesEncrypt($"salt/{Session.Salt}/{request.Command}{query}", Session));
 			encRequest.Queries.Clear();
 			encRequest.Queries.Add("sk", await Session.GetSessionKey());
-			encRequest.Encryption = EncryptionType.None;
+			encRequest.Config.Encryption = MessageEncryptionType.None;
 			return encRequest;
 		}
 

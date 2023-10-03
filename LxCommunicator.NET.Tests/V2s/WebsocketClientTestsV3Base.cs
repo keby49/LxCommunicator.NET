@@ -85,11 +85,14 @@ public class WebsocketClientTestsV3Base {
 			Layout = "${longdate}|${level:uppercase=true}|${logger}|${message}",
 		};
 
+		string loggers = "*";
+		loggers = "Websocket.Client.WebsocketClient";
+
 
 		var testTarget = new TestOutcomeTarget(output);
 
 		//config.AddRule(LogLevel.Debug, LogLevel.Fatal, consoleTarget, "*");
-		config.AddRule(LogLevel.Trace, LogLevel.Fatal, testTarget, "*");
+		config.AddRule(LogLevel.Trace, LogLevel.Fatal, testTarget, loggers);
 		LogManager.Configuration = config;
 
 		//Log.Logger = new LoggerConfiguration()

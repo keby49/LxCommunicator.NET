@@ -28,12 +28,12 @@ public class LoxoneClientTests : WebsocketClientTestsV3Base {
 		})) {
 			await loxoneClient.StartAndAuthenticate();
 
-			loxoneClient.MessageReceivedAll.Subscribe(async (message) => {
+			loxoneClient.MessageReceivedAll.Subscribe<LoxoneMessage>((Action<LoxoneMessage>)(async (message) => {
 
-				if (message.MessageType == LoxoneMessageType.EventStates) {
+				if (message.MessageType == Loxone.Communicator.LoxoneMessageType.EventStates) {
 
 				}
-			});
+			}));
 
 			Thread.Sleep(1000);
 
@@ -106,13 +106,13 @@ public class LoxoneClientTests : WebsocketClientTestsV3Base {
 			var reconnectedEvent1 = new ManualResetEvent(false);
 
 
-			loxoneClient.MessageReceivedAll.Subscribe(async (message) => {
+			loxoneClient.MessageReceivedAll.Subscribe<LoxoneMessage>((Action<LoxoneMessage>)(async (message) => {
 
-				if (message.MessageType == LoxoneMessageType.EventStates) {
+				if (message.MessageType == Loxone.Communicator.LoxoneMessageType.EventStates) {
 					this.OutputHelper.WriteLine(string.Format(CultureInfo.InvariantCulture, "XXX: EventStates", JsonConvert.SerializeObject(message, Formatting.Indented)));
 
 				}
-			});
+			}));
 
 
 			loxoneClient.client.WebSocket.DisconnectionHappened.Subscribe(di => {

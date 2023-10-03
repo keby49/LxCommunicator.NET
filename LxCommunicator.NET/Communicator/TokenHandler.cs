@@ -130,15 +130,13 @@ namespace Loxone.Communicator {
 			hmacSha.Key = Cryptography.GetByteArrayFromHex(userKey.Key);
 			string hash = Cryptography.GetHexFromByteArray(hmacSha.ComputeHash(Encoding.UTF8.GetBytes($"{Username}:{pwHash}")));
 
-			var request = new WebserviceRequest<Token>(
+			var request = WebserviceRequest<Token>.Create(
+				WebserviceRequestConfig.NoAuthWithEncryptionRequestAndResponse(),
+				nameof(this.RequestNewToken),
 				$"jdev/sys/getjwt/{hash}/{Username}/{WsClient.Session.TokenPermission}/{WsClient.Session.DeviceUuid}/{WsClient.Session.DeviceInfo}"
-				,
-				EncryptionType.RequestAndResponse
-			) {
-				NeedAuthentication = false
-			};
+			);
 
-			WebserviceContent<Token> response = await this.WsClient.SendWebserviceAndWait(request);
+			LoxoneMessageLoadContentWitControl<Token> response = await this.WsClient.SendWebserviceAndWait(request);
 
 			Token = response.Value;
 
@@ -159,7 +157,12 @@ namespace Loxone.Communicator {
 				throw new WebserviceException("Renewing Tokens is not supported with HTTP!");
 			}
 			string hash = await GetTokenHash();
-			var request = new WebserviceRequest<Token>($"jdev/sys/refreshjwt/{hash}/{Username}", EncryptionType.RequestAndResponse);
+			var request = WebserviceRequest<Token>.Create(
+				WebserviceRequestConfig.AuthWithEncryptionRequestAndResponse(),
+				nameof(this.RenewToken),
+				$"jdev/sys/refreshjwt/{hash}/{Username}"
+			);
+
 			var response = await WsClient.SendWebserviceAndWait(request);
 			Token = response.Value;
 			OnUpdateToken?.Invoke(this, new ConnectionAuthenticatedEventArgs(this));
@@ -172,7 +175,13 @@ namespace Loxone.Communicator {
 		public async Task KillToken() {
 			string hash = await GetTokenHash();
 			try {
-				var request = new WebserviceRequest<object>($"jdev/sys/killtoken/{hash}/{Username}", EncryptionType.RequestAndResponse) { Timeout = 0 };
+				var request = WebserviceRequest<object>.Create(
+					WebserviceRequestConfig.AuthWithEncryptionRequestAndResponse(),
+					nameof(this.KillToken),
+					$"jdev/sys/killtoken/{hash}/{Username}",
+					r => r.Config.Timeout = 0
+				);
+
 				var response = await WsClient.SendWebserviceAndWait(request);
 			}
 			catch {

@@ -5,11 +5,11 @@ public interface IWebserviceClient {
 
 	Session Session { get; }
 
-	Task<WebserviceResponse> SendWebserviceAndWait(WebserviceRequest request);
-	Task<WebserviceContent<T>> SendWebserviceAndWait<T>(WebserviceRequest<T> request);
+	Task<LoxoneResponseMessage> SendWebserviceAndWait(WebserviceRequest request);
+	Task<LoxoneMessageLoadContentWitControl<T>> SendWebserviceAndWait<T>(WebserviceRequest<T> request);
 
 	Task SendWebservice(WebserviceRequest request);
 
-	Task<WebserviceResponse> SendApiRequest(WebserviceRequest request);
-	Task<WebserviceContent<T>> SendApiRequest<T>(WebserviceRequest<T> request);
+	Task<LoxoneResponseMessage> SendApiRequest(WebserviceRequest request);
+	Task<LoxoneMessageLoadContentWitControl<T>> SendApiRequest<T>(WebserviceRequest<T> request);
 }

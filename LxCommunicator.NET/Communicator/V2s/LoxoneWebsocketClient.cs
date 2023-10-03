@@ -5,6 +5,7 @@ using Org.BouncyCastle.Asn1.Ocsp;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -12,6 +13,7 @@ using System.Net.Http;
 using System.Net.WebSockets;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -78,7 +80,11 @@ namespace Loxone.Communicator {
 		public async Task HandleAuthenticate() {
 
 			string key = await Session.GetSessionKey();
-			var requestKey = new WebserviceRequest<string>($"jdev/sys/keyexchange/{key}", EncryptionType.None);
+			var requestKey = WebserviceRequest<string>.Create(
+				WebserviceRequestConfig.Auth(),
+				nameof(this.HandleAuthenticate) + "_KeyExchange",
+				$"jdev/sys/keyexchange/{key}"
+			);
 			var responseKey = await SendWebserviceAndWait(requestKey);
 			string keyExchangeResponse = responseKey.Value;
 
@@ -113,7 +119,14 @@ namespace Loxone.Communicator {
 				}
 
 				string hash = await TokenHandler?.GetTokenHash();
-				string response = (await SendWebserviceAndWait(new WebserviceRequest<string>($"authwithtoken/{hash}/{TokenHandler.Username}", EncryptionType.RequestAndResponse))).Value;
+				var request = WebserviceRequest<string>.Create(
+					WebserviceRequestConfig.AuthWithEncryptionRequestAndResponse(),
+					nameof(this.HandleAuthenticate) + "_AuthWithToken",
+					$"authwithtoken/{hash}/{TokenHandler.Username}"
+				);
+
+				var requestResponse = await SendWebserviceAndWait(request);
+				string response = requestResponse.Value;
 				AuthResponse authResponse = JsonConvert.DeserializeObject<AuthResponse>(response);
 				if (authResponse.ValidUntil != default && authResponse.TokenRights != default) {
 					this.Authentificated = true;
@@ -203,7 +216,15 @@ namespace Loxone.Communicator {
 		/// <returns>Wheter the miniserver is reachable or not</returns>
 		public async Task<bool> MiniserverReachable() {
 			try {
-				string response = (await HttpWebserviceClient?.SendWebserviceAndWait(new WebserviceRequest<string>($"jdev/cfg/api", EncryptionType.None) { NeedAuthentication = false })).Value;
+				var request = WebserviceRequest<string>.Create(
+					WebserviceRequestConfig.NoAuth(),
+					nameof(this.MiniserverReachable),
+					$"jdev/cfg/api"
+				);
+
+				var requestResponse = await HttpWebserviceClient.SendWebserviceAndWait(request);
+
+				string response = requestResponse.Value;
 
 				if (response != null && response != "") {
 					return true;
@@ -223,11 +244,24 @@ namespace Loxone.Communicator {
 		//	throw new NotImplementedException();
 		//}
 
-		public async Task<WebserviceContent<T>> SendWebserviceAndWait<T>(WebserviceRequest<T> request) {
-			return (await SendWebserviceAndWait((WebserviceRequest)request))?.GetAsWebserviceContent<T>();
+		public async Task<LoxoneMessageLoadContentWitControl<T>> SendWebserviceAndWait<T>(WebserviceRequest<T> request) {
+			var r = (WebserviceRequest)request;
+			var rsp = await SendWebserviceAndWait(r);
+			if(rsp == null) {
+				return null;
+			}
+
+			if (rsp is LoxoneResponseMessageWithContainer result) {
+				return (result)?.TryGetAsWebserviceContent<T>();
+			}
+			else {
+				throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Response has different type."));
+			}
+			//var response = (LoxoneResponseMessageWithContainer)rsp;
+			//return (response)?.TryGetAsWebserviceContent<T>();
 		}
 
-		public virtual async Task<WebserviceResponse> SendApiRequest(WebserviceRequest request) {
+		public virtual async Task<LoxoneResponseMessage> SendApiRequest(WebserviceRequest request) {
 			return await this.HttpWebserviceClient.SendWebserviceAndWait(request);
 		}
 
@@ -245,14 +279,14 @@ namespace Loxone.Communicator {
 			await this.SendWebserviceInternal(false, request);
 		}
 
-		public async Task<WebserviceResponse> SendWebserviceAndWait(WebserviceRequest request) {
+		public async Task<LoxoneResponseMessage> SendWebserviceAndWait(WebserviceRequest request) {
 			return await this.SendWebserviceInternal(true, request);
 		}
 
-		private async Task<WebserviceResponse> SendWebserviceInternal(bool wait, WebserviceRequest request) {
+		private async Task<LoxoneResponseMessage> SendWebserviceInternal(bool wait, WebserviceRequest request) {
 			//if (request.NeedAuthentication) {
 			//	if (this.reconnected && this.TokenHandler.Token == null) {
-					
+
 			//		if (await TokenHandler.RequestNewToken()) {
 			//			this.Authentificated = true;
 			//			LoxoneMessageSystem message = new LoxoneMessageSystem(LoxoneMessageSystemType.AuthenticatedOnReconnection);
@@ -263,55 +297,70 @@ namespace Loxone.Communicator {
 			//	}
 			//}
 
-			switch (request?.Encryption) {
-				case EncryptionType.Request:
+			switch (request?.Config.Encryption) {
+				case MessageEncryptionType.Request:
 					request.CommandNotEncrypted = request.Command;
-					this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "SENDing {0}: {3}Orginal: {1}{3}ToSend: {2}", request.Encryption, request.CommandNotEncrypted, request.Command, (Environment.NewLine + "\t\t\t")));
+					this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "SENDing {4}|{0}: {3}Orginal: {1}{3}ToSend: {2}", request.Config.Encryption, request.CommandNotEncrypted, request.Command, (Environment.NewLine + "\t\t\t"), request.Title ?? "NO TITLE"));
 					request.CommandNotEscaped = Cryptography.AesEncrypt($"salt/{Session.Salt}/{request.Command}", Session);
 					request.Command = Uri.EscapeDataString(request.CommandNotEscaped);
 					request.Command = $"jdev/sys/enc/{request.Command}";
 					request.CommandNotEscaped = $"jdev/sys/enc/{request.CommandNotEscaped}";
-					request.Encryption = EncryptionType.None;
+					//TODO >> Request >> Set parent
+					request.Config.Encryption = MessageEncryptionType.None;
 					return await this.SendMessage(wait, request);
 
-				case EncryptionType.RequestAndResponse:
+				case MessageEncryptionType.RequestAndResponse:
 					request.CommandNotEncrypted = request.Command;
 					request.CommandNotEscaped = request.CommandNotEscaped;
-					this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "SENDing {0}: {3}Orginal: {1}{3}ToSend: {2}", request.Encryption, request.CommandNotEncrypted, request.Command, (Environment.NewLine + "\t\t\t")));
+					this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "SENDing {4}|{0}: {3}Orginal: {1}{3}ToSend: {2}", request.Config.Encryption, request.CommandNotEncrypted, request.Command, (Environment.NewLine + "\t\t\t"), request.Title ?? "NO TITLE"));
 					string commandNotEscaped = Cryptography.AesEncrypt($"salt/{Session.Salt}/{request.Command}", Session);
 					string command = Uri.EscapeDataString(commandNotEscaped);
 					command = $"jdev/sys/fenc/{command}";
 
 					commandNotEscaped = $"jdev/sys/fenc/{commandNotEscaped}";
-					WebserviceRequest encryptedRequest = new WebserviceRequest(command, EncryptionType.None, request.NeedAuthentication);
-					encryptedRequest.Timeout = request.Timeout;
+					//TODO >> Request >> Set parent
+					var encryptedRequest = WebserviceRequest.Create(
+						WebserviceRequestConfig.Auth(),
+						request.Title ?? "NULL" + "_Encryped" + nameof(MessageEncryptionType.RequestAndResponse),
+						command,
+						r => {
+							r.Config.NeedAuthentication = request.Config.NeedAuthentication;
+							r.Config.Timeout = request.Config.Timeout;
+						}
+					);
+
 					//encryptedRequest.CommandNotEscaped = commandNotEscaped;
 					encryptedRequest.CommandNotEncrypted = request.CommandNotEncrypted;
 					encryptedRequest.CommandNotEscaped = commandNotEscaped;
 
-					WebserviceResponse encrypedResponse = await this.SendMessage(wait, encryptedRequest);
+					LoxoneResponseMessage encrypedResponse = await this.SendMessage(wait, encryptedRequest);
 
 					if (encrypedResponse == null) {
-						request.TryValidateResponse(new WebserviceResponse(null, null, (int?)WebSocket?.NativeClient.CloseStatus));
+						request.TryValidateResponse(null);
 					}
-					else {
-						var bad = encrypedResponse.GetAsWebserviceContent();
+					else {						
+						var decrypted = this.Decrypt(encrypedResponse.TryGetContentAsString());
+						var bytes = LoxoneContentHelper.GetBytesAsString(decrypted);
+						encrypedResponse.SetContent(bytes);
+						request.TryValidateResponse(encrypedResponse);
 
-						if (bad != null && bad.Code != System.Net.HttpStatusCode.OK) {
-							throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Encrypted response is not valid by code. Code={0}, Request={1}, Response={2}", encrypedResponse.ClientCode, request.CommandNotEncrypted ?? request.CommandNotEscaped ?? request.Command, encrypedResponse.GetAsStringContent()));
-						}
-						var decrypted = this.Decrypt(encrypedResponse.GetAsStringContent());
-						request.TryValidateResponse(new WebserviceResponse(encrypedResponse.Header, Encoding.UTF8.GetBytes(decrypted), (int?)WebSocket?.NativeClient.CloseStatus));
+						//var bad = encrypedResponse.TryGetAsWebserviceContent();
+
+						//if (bad != null && bad.Code != System.Net.HttpStatusCode.OK) {
+						//	throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Encrypted response is not valid by code. Code={0}, Request={1}, Response={2}", encrypedResponse.ClientCode, request.CommandNotEncrypted ?? request.CommandNotEscaped ?? request.Command, encrypedResponse.GetAsStringContent()));
+						//}
+
+						//request.TryValidateResponse(new WebserviceResponse(encrypedResponse.Header, Encoding.UTF8.GetBytes(decrypted), (int?)WebSocket?.NativeClient.CloseStatus));
 					}
 					return request.WaitForResponse();
 
 				default:
-				case EncryptionType.None:
+				case MessageEncryptionType.None:
 					return await this.SendMessage(wait, request);
 			}
 		}
-		private async Task<WebserviceResponse> SendMessage(bool wait, WebserviceRequest request) {
-			this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "SENDing {0}: wait={4} {3}Orginal: {1}{3}ToSend: {2}", request.Encryption, request.CommandNotEncrypted, request.Command, (Environment.NewLine + "\t\t\t"), wait));
+		private async Task<LoxoneResponseMessage> SendMessage(bool wait, WebserviceRequest request) {
+			this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "SENDing {5}|{0}: wait={4} {3}Orginal: {1}{3}ToSend: {2}", request.Config.Encryption, request.CommandNotEncrypted, request.Command, (Environment.NewLine + "\t\t\t"), wait, request.Title ?? "NO TITLE"));
 			if (WebSocket == null || WebSocket.NativeClient.State != WebSocketState.Open) {
 				if (WebSocket == null) {
 					this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "WebSocket is null."));
@@ -350,22 +399,154 @@ namespace Loxone.Communicator {
 			return responseWait;
 		}
 
+		///// <summary>
+		///// Handles the assignment of the responses to the right requests.
+		///// </summary>
+		///// <param name="response">The response that should be handled</param>
+		///// <returns>Whether or not the reponse could be assigned to a request</returns>
+		//private bool HandleWebserviceResponseOld(LoxoneMessageWithResponse loxoneMessage) {
+		//	if (Requests.Count == 0) {
+		//		this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "NO REQUESTs TO HANDLE."));
+		//	}
+		//	foreach (WebserviceRequest request in Enumerable.Reverse(Requests)) {
+		//		if (request.TryValidateResponse(loxoneMessage.RawResponse)) {
+		//			lock (Requests) {
+		//				Requests.Remove(request);
+		//				this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "REQUESTs (after validate) COUNT= {0}", this.Requests.Count));
+		//				loxoneMessage.Handled = true;
+		//				this.loxoneMessageReceived.OnNext(loxoneMessage);
+		//			}
+		//			return true;
+		//		}
+		//	}
+		//	return false;
+		//}
+
+		LoxoneMessageHeader lastHeader;
+
+
+		public Logger Logger { get; }
+
+		private void BeginListening() {
+			this.WebSocket.MessageReceived.Subscribe(msg => {
+				ReceivedRawLoxoneWebSocketMessage responseToHandle = new ReceivedRawLoxoneWebSocketMessage(msg, (int?)WebSocket?.NativeClient.CloseStatus);
+
+				if (responseToHandle != null) {
+					this.HandleResponseWithHeader(responseToHandle);
+				}
+				else {
+
+				}
+			});
+		}
+
+
+
+
+		private void HandleResponseWithHeader(ReceivedRawLoxoneWebSocketMessage message) {
+			LoxoneResponseMessage messageToHandle = LoxoneResponseParser.ParseResponseWithHeader(true, message, c => this.Decrypt(c), this.MessageHeaderList);
+
+			if (messageToHandle != null) {
+				var x = messageToHandle as LoxoneResponseMessageWithContainer;
+				var handled = this.HandleWebserviceResponse(messageToHandle);
+				if (handled) {
+					messageToHandle.Handled = true;
+				}
+				else {
+
+				}
+			}
+
+
+			//switch (message.WebSocketMessageType) {
+			//	case LoxoneWebSocketMessageType.HeaderMessage:
+			//		if (message.Header.Estimated) {
+			//			return;
+			//		}
+
+			//		switch (message.Header.Type) {
+			//			case MessageType.OutOfService:
+			//				//TODO >> MTV >> Message >> OutOfService
+			//				messageToHandle = new LoxoneResponseMessage(message, LoxoneResponseMessageCategory.Systems, LoxoneDataFormat.None);
+			//				break;
+			//			case MessageType.KeepAlive:
+			//				messageToHandle = new LoxoneResponseMessage(message, LoxoneResponseMessageCategory.Systems, LoxoneDataFormat.None);
+			//				//TODO >> MTV >> Message >> KeepAlive
+			//				break;
+			//		}
+
+			//		this.MessageHeaderList.Add(message.Header);
+			//		break;
+			//	case LoxoneWebSocketMessageType.TextMessage:
+			//	case LoxoneWebSocketMessageType.BinarryMessage:
+			//		var header = this.TryGetMessageHeader(message);
+
+			//		if (header == null) {
+			//			throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Message without header. {0}", JsonConvert.SerializeObject(message)));
+			//		}
+			//		message.Header = header;
+
+			//		// Handle events
+			//		if (this.ParseEventTable(message, out LoxoneResponseMessageWithEventStates messagesWithStates)) {
+			//			messageToHandle = messagesWithStates;
+			//		}
+			//		else {
+			//			// Try handle content message
+			//			string rawContent = LoxoneContentHelper.GetStringFromBytes(message.Content);
+			//			LoxoneMessageLoadContainer container = LoxoneContentHelper.ParseWebserviceContainer(rawContent);
+			//			if (container == null) {
+			//				// may be encrypted responses
+			//				try {
+			//					rawContent = this.Decrypt(rawContent);
+			//					container = LoxoneContentHelper.ParseWebserviceContainer(rawContent);
+			//				}
+			//				catch { }
+			//			}
+
+			//			if (container != null) {
+			//				messageToHandle = new LoxoneResponseMessageWithContainer(message, container);
+			//				if (this.HandleWebserviceResponse(messageToHandle)) {
+			//					messageToHandle.Handled = true;
+			//				}
+			//			}
+			//		}
+
+			//		break;
+			//}
+
+			//if (messageToHandle == null) {
+			//	messageToHandle = new LoxoneResponseMessage(message, LoxoneResponseMessageCategory.Uknown, LoxoneDataFormat.None);
+			//}
+
+			//if (messageToHandle.Handled) {
+			//	//TODO >> MTV >> Message handled >> Dofference collection
+			//	loxoneMessageResponseReceived.OnNext(messageToHandle);
+			//}
+			//else {
+			//	loxoneMessageResponseReceived.OnNext(messageToHandle);
+			//}
+		}
+
 		/// <summary>
 		/// Handles the assignment of the responses to the right requests.
 		/// </summary>
 		/// <param name="response">The response that should be handled</param>
 		/// <returns>Whether or not the reponse could be assigned to a request</returns>
-		private bool HandleWebserviceResponse(LoxoneMessageWithResponse loxoneMessage) {
+		private bool HandleWebserviceResponse(LoxoneResponseMessage loxoneMessage) {
+			if (loxoneMessage == null) {
+				return false;
+			}
+
 			if (Requests.Count == 0) {
 				this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "NO REQUESTs TO HANDLE."));
 			}
 			foreach (WebserviceRequest request in Enumerable.Reverse(Requests)) {
-				if (request.TryValidateResponse(loxoneMessage.RawResponse)) {
+				if (request.TryValidateResponse(loxoneMessage)) {
 					lock (Requests) {
 						Requests.Remove(request);
 						this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "REQUESTs (after validate) COUNT= {0}", this.Requests.Count));
 						loxoneMessage.Handled = true;
-						this.loxoneMessageReceived.OnNext(loxoneMessage);
+						//this.loxoneMessageReceived.OnNext(loxoneMessage);
 					}
 					return true;
 				}
@@ -373,81 +554,89 @@ namespace Loxone.Communicator {
 			return false;
 		}
 
-		MessageHeader lastHeader;
 
 
-		public Logger Logger { get; }
+		///// <summary>
+		///// The listener starts to wait for messsages from the miniserver
+		///// </summary>
+		//private void BeginListeningOLD() {
+		//	this.WebSocket.MessageReceived.Subscribe(msg => {
+		//		WebserviceResponse responseToHandle = null;
+		//		switch (msg.MessageType) {
+		//			case WebSocketMessageType.Text:
+		//				if (this.lastHeader == null) {
+		//					throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Message header not found."));
+		//				}
 
-		/// <summary>
-		/// The listener starts to wait for messsages from the miniserver
-		/// </summary>
-		private void BeginListening() {
-			this.WebSocket.MessageReceived.Subscribe(msg => {
-				WebserviceResponse responseToHandle = null;
-				switch (msg.MessageType) {
-					case WebSocketMessageType.Text:
-						if (this.lastHeader == null) {
-							throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Message header not found."));
-						}
+		//				responseToHandle = new WebserviceResponse(lastHeader, Encoding.UTF8.GetBytes(msg.Text), (int?)WebSocket?.NativeClient.CloseStatus);
+		//				this.lastHeader = null;
 
-						responseToHandle = new WebserviceResponse(lastHeader, Encoding.UTF8.GetBytes(msg.Text), (int?)WebSocket?.NativeClient.CloseStatus);
-						this.lastHeader = null;
+		//				break;
+		//			case WebSocketMessageType.Binary:
+		//				if (this.lastHeader != null) {
+		//					LoxoneMessageHeader headerSecond;
+		//					if (LoxoneMessageHeader.TryParse(msg.Binary, out headerSecond)) {
+		//						// cannot have two headers
+		//						break;
+		//					}
+		//				}
 
-						break;
-					case WebSocketMessageType.Binary:
-						if (this.lastHeader != null) {
-							MessageHeader headerSecond;
-							if (MessageHeader.TryParse(msg.Binary, out headerSecond)) {
-								// cannot have two headers
-								break;
-							}
-						}
+		//				if (this.lastHeader != null) {
+		//					responseToHandle = new WebserviceResponse(lastHeader, msg.Binary, (int?)WebSocket?.NativeClient.CloseStatus);
+		//					this.lastHeader = null;
+		//				}
+		//				else {
+		//					LoxoneMessageHeader header;
+		//					if (!LoxoneMessageHeader.TryParse(msg.Binary, out header)) {
+		//						throw new WebserviceException("Received incomplete Data: \n" + Encoding.UTF8.GetString(msg.Binary));
+		//					}
+		//					else {
+		//						lastHeader = header;
+		//					}
+		//				}
+		//				break;
+		//			case WebSocketMessageType.Close:
+		//				break;
 
-						if (this.lastHeader != null) {
-							responseToHandle = new WebserviceResponse(lastHeader, msg.Binary, (int?)WebSocket?.NativeClient.CloseStatus);
-							this.lastHeader = null;
-						}
-						else {
-							MessageHeader header;
-							if (!MessageHeader.TryParse(msg.Binary, out header)) {
-								throw new WebserviceException("Received incomplete Data: \n" + Encoding.UTF8.GetString(msg.Binary));
-							}
-							else {
-								lastHeader = header;
-							}
-						}
-						break;
-					case WebSocketMessageType.Close:
-						break;
+		//		}
 
-				}
+		//		if (responseToHandle != null) {
+		//			this.HandleResponseWithHeaderOld(responseToHandle);
+		//		}
+		//	});
+		//}
 
-				if (responseToHandle != null) {
-					this.HandleResponseWithHeader(responseToHandle);
-				}
-			});
-		}
+		//private void HandleResponseWithHeaderOld(WebserviceResponse responseToHandle) {
+		//	var message = new LoxoneMessageWithResponse(responseToHandle.Header, responseToHandle, LoxoneMessageType.Uknown) {
+		//	};
 
+		//	if (this.HandleWebserviceResponseOld(message)) {
+		//		return;
+		//	}
+
+		//	if (this.ParseEventTable(message)) {
+		//		return;
+		//	}
+
+		//	this.loxoneMessageReceived.OnNext(message);
+		//}
+
+		[Obsolete]
 		private readonly Subject<LoxoneMessage> loxoneMessageReceived = new Subject<LoxoneMessage>();
 
+		[Obsolete]
 		public IObservable<LoxoneMessage> LoxoneMessageReceived => loxoneMessageReceived.AsObservable();
+
+
+		private readonly Subject<LoxoneResponseMessage> loxoneMessageResponseReceived = new Subject<LoxoneResponseMessage>();
+
+		public IObservable<LoxoneResponseMessage> LoxoneMessageResponseReceived => loxoneMessageResponseReceived.AsObservable();
+
+		private List<LoxoneMessageHeader> MessageHeaderList { get; set; } = new List<LoxoneMessageHeader>();
 
 		public bool Authentificated { get; private set; }
 
-		private void HandleResponseWithHeader(WebserviceResponse responseToHandle) {
-			var message = new LoxoneMessageWithResponse(responseToHandle.Header, responseToHandle, LoxoneMessageType.Uknown) {
-			};
 
-			if (this.HandleWebserviceResponse(message)) {
-				return;
-			}
-
-			if (this.ParseEventTable(message)) {
-				return;
-			}
-
-			this.loxoneMessageReceived.OnNext(message);
-		}
 
 
 		///// <summary>
@@ -507,7 +696,7 @@ namespace Loxone.Communicator {
 		/// <param name="content">The message that should be parsed</param>
 		/// <param name="type">The expected type of the eventTable</param>
 		/// <returns>Whether or not parsing the eventTable was successful</returns>
-		private bool ParseEventTable(LoxoneMessageWithResponse loxoneMessage) {
+		private bool ParseEventTableOld(LoxoneMessageWithResponse loxoneMessage) {
 			byte[] content = loxoneMessage.RawResponse.Content;
 			MessageType type = loxoneMessage.Header.Type;
 
@@ -572,8 +761,10 @@ namespace Loxone.Communicator {
 			}
 		}
 
-		public async Task<WebserviceContent<T>> SendApiRequest<T>(WebserviceRequest<T> request) {
-			return (await SendApiRequest((WebserviceRequest)request))?.GetAsWebserviceContent<T>();
+		public async Task<LoxoneMessageLoadContentWitControl<T>> SendApiRequest<T>(WebserviceRequest<T> request) {
+			var r = (WebserviceRequest)request;
+			var response = await SendApiRequest(r);
+			return ((LoxoneResponseMessageWithContainer)response)?.TryGetAsWebserviceContent<T>();
 
 		}
 

@@ -86,7 +86,7 @@ namespace Loxone.Communicator {
 						}
 					}
 				}
-			});			
+			});
 
 			this.handler = new TokenHandlerV3(this.client, this.LoxoneClientConfiguration.LoxoneUser.UserName);
 			handler.SetPassword(this.LoxoneClientConfiguration.LoxoneUser.UserPassword);
@@ -137,22 +137,32 @@ namespace Loxone.Communicator {
 			await this.EnablebInStatusUpdate();
 		}
 
-		public async Task SendMessage(EncryptionType encryptionType, string messageContent) {
-			WebserviceRequest request = new WebserviceRequest(messageContent, encryptionType);
+		public async Task SendMessage(string messageTitle, MessageEncryptionType encryptionType, string messageContent) {
+			var config = new WebserviceRequestConfig() {
+				NeedAuthentication = true,
+				Encryption = encryptionType,
+			};
+
+			WebserviceRequest request = WebserviceRequest.Create(config, messageTitle, messageContent);
 			await this.client.SendWebservice(request);
 		}
 
-		public async Task<string> GetTextFile(EncryptionType encryptionType, string fileName) {
-			WebserviceRequest request2 = new WebserviceRequest(fileName, EncryptionType.None);
-			request2.Timeout = 1000 * 120;
+		public async Task<string> GetTextFile(string fileName) {
+			WebserviceRequest request2 = WebserviceRequest.Create(
+				WebserviceRequestConfig.Auth(),
+				nameof(this.GetTextFile) + fileName ?? "NULL fileName",
+				fileName,
+				r => r.Config.Timeout = 1000 * 120
+			);
+
 			// date modified >>  “jdev/sps/LoxAPPversion3
-			var result = await this.client.SendWebserviceAndWait(request2);
-			var stringResult = Encoding.UTF8.GetString(result.Content);
+			LoxoneResponseMessage result = await this.client.SendWebserviceAndWait(request2);
+			var stringResult = Encoding.UTF8.GetString(result.ReceivedMessage.Content);
 			return stringResult;
 		}
 
 		public async Task<string> GetLoxoneStructureAsJson() {
-			var result = await this.GetTextFile(EncryptionType.None, "data/LoxAPP3.json");
+			var result = await this.GetTextFile("data/LoxAPP3.json");
 			return result;
 		}
 
@@ -194,7 +204,12 @@ namespace Loxone.Communicator {
 		public async Task<bool> EnablebInStatusUpdate() {
 
 			await this.EnsureConnected();
-			var request = new WebserviceRequest<string>("jdev/sps/enablebinstatusupdate", EncryptionType.None);
+			var request = WebserviceRequest<string>.Create(
+				WebserviceRequestConfig.Auth(),
+				nameof(this.EnablebInStatusUpdate),
+				"jdev/sps/enablebinstatusupdate"
+			);
+
 			var response = await this.client.SendWebserviceAndWait(request);
 			string result = response.Value;
 			return result == "1";
@@ -203,7 +218,11 @@ namespace Loxone.Communicator {
 		public async Task SendKeepalive() {
 
 			await this.EnsureConnected();
-			var keepaliveRequest = new WebserviceRequest<string>("keepalive", EncryptionType.None);
+			var keepaliveRequest = WebserviceRequest<string>.Create(
+				WebserviceRequestConfig.Auth(),
+				nameof(this.SendKeepalive),
+				"keepalive"
+			);
 			await this.client.SendWebservice(keepaliveRequest);
 		}
 

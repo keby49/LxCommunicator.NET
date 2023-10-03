@@ -23,26 +23,53 @@ public class LoxoneAuthentificationTests : WebsocketClientTestsV3Base {
 		using (TokenHandlerV3 handler = new TokenHandlerV3(loxoneWebsocketClient, user.UserName)) {
 			handler.SetPassword(user.UserPassword);
 			await loxoneWebsocketClient.StartAndConnection(handler);
-			var versionRequest = new WebserviceRequest<string>("jdev/cfg/version", EncryptionType.Request);
+			var versionRequest = WebserviceRequest<string>.Create(
+				WebserviceRequestConfig.AuthWithEncryptionRequest(),
+				"GetVersion",
+				"jdev/cfg/version"
+				);
 			string version = (await loxoneWebsocketClient.SendWebserviceAndWait(versionRequest)).Value;
+
 			Console.WriteLine($"Version: {version}");
 			Thread.Sleep(100);
-			versionRequest = new WebserviceRequest<string>("jdev/cfg/version", EncryptionType.Request);
+
+			versionRequest = WebserviceRequest<string>.Create(
+				WebserviceRequestConfig.AuthWithEncryptionRequest(),
+				"GetVersion",
+				"jdev/cfg/version"
+				);
 			version = (await loxoneWebsocketClient.SendWebserviceAndWait(versionRequest)).Value;
 			Console.WriteLine($"Version: {version}");
 
 			Thread.Sleep(1000);
-			var keepaliveRequest = new WebserviceRequest<string>("keepalive", EncryptionType.RequestAndResponse);
+			
+			var keepaliveRequest = WebserviceRequest<string>.Create(
+				WebserviceRequestConfig.AuthWithEncryptionRequestAndResponse(),
+				"keepalive",
+				"keepalive"
+				);
+
 			await loxoneWebsocketClient.SendWebservice(keepaliveRequest);
 			Console.WriteLine($"keepalive: ok");
 
 			Thread.Sleep(1000);
-			keepaliveRequest = new WebserviceRequest<string>("keepalive", EncryptionType.RequestAndResponse);
+			keepaliveRequest = WebserviceRequest<string>.Create(
+				WebserviceRequestConfig.AuthWithEncryptionRequestAndResponse(),
+				"keepalive",
+				"keepalive"
+				);
+
 			loxoneWebsocketClient.SendWebservice(keepaliveRequest);
 			Console.WriteLine($"keepalive: ok");
 
 			Thread.Sleep(1000);
-			keepaliveRequest = new WebserviceRequest<string>("keepalive", EncryptionType.RequestAndResponse);
+			
+			keepaliveRequest = WebserviceRequest<string>.Create(
+				WebserviceRequestConfig.AuthWithEncryptionRequestAndResponse(),
+				"keepalive",
+				"keepalive"
+				);
+
 			loxoneWebsocketClient.SendWebservice(keepaliveRequest);
 			Console.WriteLine($"keepalive: ok");
 

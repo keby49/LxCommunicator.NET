@@ -35,18 +35,29 @@ public class LoxoneWebsocketClientTests : WebsocketClientTestsV3Base {
 			handler = new TokenHandlerV3(wsClient, user.UserName);
 
 			handler.SetPassword(user.UserPassword);
-			
+
 			await wsClient.StartAndConnection(handler);
-			wsClient.SendWebserviceAndWait(new WebserviceRequest<string>("jdev/sps/enablebinstatusupdate", EncryptionType.None));
+			var request1 = WebserviceRequest<string>.Create(
+			   WebserviceRequestConfig.Auth(),
+			   "enablebinstatusupdate",
+			   "jdev/sps/enablebinstatusupdate"
+			   );
+
+			await wsClient.SendWebserviceAndWait(request1);
 
 			//receivedUpdates.WaitOne(TimeSpan.FromSeconds(30));
 			Thread.Sleep(3000);
 
 			for (int i = 0; i < 100; i++) {
-				var r = await wsClient.SendWebserviceAndWait(new WebserviceRequest("keepalive", EncryptionType.None));
+				var kr = WebserviceRequest<string>.Create(
+				WebserviceRequestConfig.Auth(),
+				"keepalive",
+				"keepalive"
+				);
+				var r = await wsClient.SendWebserviceAndWait(kr);
 				Thread.Sleep(1000);
 			}
-			
+
 			//receivedMessage.WaitOne(TimeSpan.FromSeconds(30));
 
 			Thread.Sleep(3000);

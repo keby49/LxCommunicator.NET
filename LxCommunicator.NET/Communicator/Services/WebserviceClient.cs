@@ -11,11 +11,10 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Loxone.Communicator {
-    /// <summary>
-    /// Client to handle Webservices to Loxone Minsierver. Derive from <see cref="WebserviceClient"/> to implement your own Client
-    /// </summary>
-    public abstract class WebserviceClient : IDisposable, IWebserviceClient
-    {
+	/// <summary>
+	/// Client to handle Webservices to Loxone Minsierver. Derive from <see cref="WebserviceClient"/> to implement your own Client
+	/// </summary>
+	public abstract class WebserviceClient : IDisposable, IWebserviceClient {
 		protected WebserviceClient(ConnectionConfiguration connectionConfiguration) {
 			this.ConnectionConfiguration = connectionConfiguration;
 		}
@@ -42,8 +41,9 @@ namespace Loxone.Communicator {
 		/// <typeparam name="T">The object that should be returned in Value</typeparam>
 		/// <param name="request">The Request that should be sent</param>
 		/// <returns>The Response the miniserver returns</returns>
-		public async Task<WebserviceContent<T>> SendWebserviceAndWait<T>(WebserviceRequest<T> request) {
-			return (await SendWebserviceAndWait((WebserviceRequest)request))?.GetAsWebserviceContent<T>();
+		public async Task<LoxoneMessageLoadContentWitControl<T>> SendWebserviceAndWait<T>(WebserviceRequest<T> request) {
+			var response = (LoxoneResponseMessageWithContainer)await SendWebserviceAndWait((WebserviceRequest)request);
+			return response?.TryGetAsWebserviceContent<T>();
 		}
 
 		/// <summary>
@@ -51,8 +51,8 @@ namespace Loxone.Communicator {
 		/// </summary>
 		/// <param name="request">The Request that should be sent</param>
 		/// <returns>The Response the miniserver returns</returns>
-		public virtual async Task<WebserviceResponse> SendWebserviceAndWait(WebserviceRequest request) {
-			return await Task.FromResult<WebserviceResponse>(null);
+		public virtual async Task<LoxoneResponseMessage> SendWebserviceAndWait(WebserviceRequest request) {
+			return await Task.FromResult<LoxoneResponseMessage>(null);
 		}
 
 		/// <summary>
@@ -62,18 +62,17 @@ namespace Loxone.Communicator {
 			TokenHandler?.Dispose();
 		}
 
-		public virtual async Task<WebserviceResponse> SendApiRequest(WebserviceRequest request) {
-			return await Task.FromResult<WebserviceResponse>(null);
+		public virtual async Task<LoxoneResponseMessage> SendApiRequest(WebserviceRequest request) {
+			return await Task.FromResult<LoxoneResponseMessage>(null);
 		}
 
-		public async Task<WebserviceContent<T>> SendApiRequest<T>(WebserviceRequest<T> request) {
-			return (await SendApiRequest((WebserviceRequest)request))?.GetAsWebserviceContent<T>();
-
+		public async Task<LoxoneMessageLoadContentWitControl<T>> SendApiRequest<T>(WebserviceRequest<T> request) {
+			var response = (LoxoneResponseMessageWithContainer)await SendApiRequest((WebserviceRequest)request);
+			return response?.TryGetAsWebserviceContent<T>();
 		}
 
-        public Task SendWebservice(WebserviceRequest request)
-        {
-            throw new NotImplementedException();
-        }
-    }
+		public Task SendWebservice(WebserviceRequest request) {
+			throw new NotImplementedException();
+		}
+	}
 }

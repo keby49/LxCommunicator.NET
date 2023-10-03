@@ -30,6 +30,7 @@
 	
 
   <ItemGroup>
+    <PackageReference Include="DeepCloner" Version="0.10.4" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     <PackageReference Include="NLog" Version="5.2.3" />
     <PackageReference Include="Portable.BouncyCastle" Version="1.8.6.7" />
@@ -49,6 +50,11 @@
     </None>
     <None Include="AdvancedCommunicator\_olld\WebsocketWebserviceClient.cs" />
     <None Include="Communicator\V2s\LoxoneWebsocketClientA1.cs" />
+  </ItemGroup>
+	
+
+  <ItemGroup>
+    <Folder Include="Communicator\WebModels\Loxone\Responses\" />
   </ItemGroup>
 
 </Project>
