@@ -22,7 +22,7 @@ using Websocket.Client.Models;
 
 namespace Loxone.Communicator {
 
-	public class LoxoneClient : IDisposable {
+	public class LoxoneClient : IDisposable, ILoxoneOperations {
 
 		private static readonly object LockObject = new object();
 
@@ -147,24 +147,7 @@ namespace Loxone.Communicator {
 			await this.client.SendWebservice(request);
 		}
 
-		public async Task<string> GetTextFile(string fileName) {
-			WebserviceRequest request2 = WebserviceRequest.Create(
-				WebserviceRequestConfig.Auth(),
-				nameof(this.GetTextFile) + fileName ?? "NULL fileName",
-				fileName,
-				r => r.Config.Timeout = 1000 * 120
-			);
-
-			// date modified >>  “jdev/sps/LoxAPPversion3
-			LoxoneResponseMessage result = await this.client.SendWebserviceAndWait(request2);
-			var stringResult = Encoding.UTF8.GetString(result.ReceivedMessage.Content);
-			return stringResult;
-		}
-
-		public async Task<string> GetLoxoneStructureAsJson() {
-			var result = await this.GetTextFile("data/LoxAPP3.json");
-			return result;
-		}
+		
 
 		public string Decrypt(string contentToDecrypt) {
 			return this.client.Decrypt(contentToDecrypt);
@@ -201,31 +184,7 @@ namespace Loxone.Communicator {
 
 
 		}
-		public async Task<bool> EnablebInStatusUpdate() {
-
-			await this.EnsureConnected();
-			var request = WebserviceRequest<string>.Create(
-				WebserviceRequestConfig.Auth(),
-				nameof(this.EnablebInStatusUpdate),
-				"jdev/sps/enablebinstatusupdate"
-			);
-
-			var response = await this.client.SendWebserviceAndWait(request);
-			string result = response.Value;
-			return result == "1";
-		}
-
-		public async Task SendKeepalive() {
-
-			await this.EnsureConnected();
-			var keepaliveRequest = WebserviceRequest<string>.Create(
-				WebserviceRequestConfig.Auth(),
-				nameof(this.SendKeepalive),
-				"keepalive"
-			);
-			await this.client.SendWebservice(keepaliveRequest);
-		}
-
+		
 		private async Task EnsureConnected() {
 			await Task.CompletedTask;
 			//TODO >> Ensure connected before message
@@ -238,6 +197,32 @@ namespace Loxone.Communicator {
 		public async virtual void Dispose() {
 			this.messageReceivedAll.OnCompleted();
 			await this.StopAndKillToken();
+		}
+		        
+
+        public async Task<string> GetTextFile(string fileName)
+        {
+			await this.EnsureConnected();
+			return await this.client.GetTextFile(fileName);
+        }
+
+        public async Task<string> GetLoxoneStructureAsJson()
+        {
+			await this.EnsureConnected();
+			return await this.client.GetLoxoneStructureAsJson();
+		}
+
+		public async Task<bool> EnablebInStatusUpdate() {
+
+			await this.EnsureConnected();
+			return await this.client.EnablebInStatusUpdate();
+
+		}
+
+		public async Task SendKeepalive() {
+
+			await this.EnsureConnected();
+			await this.client.SendKeepalive();
 		}
 	}
 }

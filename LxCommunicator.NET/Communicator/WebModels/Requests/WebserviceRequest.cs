@@ -92,6 +92,10 @@ namespace Loxone.Communicator {
 					LoxoneResponseMessageWithContainer withContainer = (LoxoneResponseMessageWithContainer)response;
 					var content = withContainer.Container.Response;
 
+					if(content == null) {
+
+					}
+
 					var any = requestCommandList.Any(c => DefaultWebserviceComparer.Comparer.Compare(c, content.Control) == 0);
 					if (!any) {
 						// different request

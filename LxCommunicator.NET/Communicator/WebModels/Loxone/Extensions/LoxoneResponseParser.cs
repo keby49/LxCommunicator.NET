@@ -163,7 +163,7 @@ namespace Loxone.Communicator {
 							catch { }
 						}
 
-						if (container != null) {
+						if (container?.Response != null) {
 							messageToHandle = new LoxoneResponseMessageWithContainer(message, container);
 						}
 					}

@@ -21,7 +21,7 @@ public class LoxoneWebsocketClientTests : WebsocketClientTestsV3Base {
 	static ManualResetEvent receivedMessage = new ManualResetEvent(false);
 	static int tableEvents = 0;
 	[Fact]
-	public async Task Test1() {
+	public async Task keepalive() {
 		var wsClient = GetWebsockerClient();
 		var apiClient = GetHttpClient();
 		var user = GetUser();
@@ -37,13 +37,8 @@ public class LoxoneWebsocketClientTests : WebsocketClientTestsV3Base {
 			handler.SetPassword(user.UserPassword);
 
 			await wsClient.StartAndConnection(handler);
-			var request1 = WebserviceRequest<string>.Create(
-			   WebserviceRequestConfig.Auth(),
-			   "enablebinstatusupdate",
-			   "jdev/sps/enablebinstatusupdate"
-			   );
 
-			await wsClient.SendWebserviceAndWait(request1);
+			await wsClient.EnablebInStatusUpdate();
 
 			//receivedUpdates.WaitOne(TimeSpan.FromSeconds(30));
 			Thread.Sleep(3000);
@@ -61,6 +56,37 @@ public class LoxoneWebsocketClientTests : WebsocketClientTestsV3Base {
 			//receivedMessage.WaitOne(TimeSpan.FromSeconds(30));
 
 			Thread.Sleep(3000);
+			await handler.KillToken();
+		}
+
+
+	}
+
+	[Fact]
+	public async Task GetLoxoneStructureAsJson() {
+		var wsClient = GetWebsockerClient();
+		var apiClient = GetHttpClient();
+		var user = GetUser();
+
+		receivedUpdates = new ManualResetEvent(false);
+
+		TokenHandlerV3 handler = null;
+
+		tableEvents = 0;
+		using (wsClient) {
+			handler = new TokenHandlerV3(wsClient, user.UserName);
+
+			handler.SetPassword(user.UserPassword);
+
+			await wsClient.StartAndConnection(handler);
+
+			await wsClient.EnablebInStatusUpdate();
+			Thread.Sleep(1000);
+
+			var fileCotent = await wsClient.GetLoxoneStructureAsJson();
+
+			fileCotent.Should().NotBeNull();
+
 			await handler.KillToken();
 		}
 

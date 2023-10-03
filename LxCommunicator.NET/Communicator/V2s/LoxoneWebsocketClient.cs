@@ -23,7 +23,7 @@ using Websocket.Client.Models;
 
 namespace Loxone.Communicator {
 
-	public class LoxoneWebsocketClient : LoxoneLanClientWithHttp, IWebserviceClient {
+	public class LoxoneWebsocketClient : LoxoneLanClientWithHttp, IWebserviceClient, ILoxoneOperations {
 		///// <summary>
 		///// The httpCLient used for checking if the miniserver is available and getting the public key.
 		///// </summary>
@@ -247,7 +247,7 @@ namespace Loxone.Communicator {
 		public async Task<LoxoneMessageLoadContentWitControl<T>> SendWebserviceAndWait<T>(WebserviceRequest<T> request) {
 			var r = (WebserviceRequest)request;
 			var rsp = await SendWebserviceAndWait(r);
-			if(rsp == null) {
+			if (rsp == null) {
 				return null;
 			}
 
@@ -338,7 +338,7 @@ namespace Loxone.Communicator {
 					if (encrypedResponse == null) {
 						request.TryValidateResponse(null);
 					}
-					else {						
+					else {
 						var decrypted = this.Decrypt(encrypedResponse.TryGetContentAsString());
 						var bytes = LoxoneContentHelper.GetBytesAsString(decrypted);
 						encrypedResponse.SetContent(bytes);
@@ -768,5 +768,50 @@ namespace Loxone.Communicator {
 
 		}
 
+
+
+		// Commands
+
+		public async Task<string> GetTextFile(string fileName) {
+			WebserviceRequest request2 = WebserviceRequest.Create(
+				WebserviceRequestConfig.Auth(),
+				nameof(this.GetTextFile) + fileName ?? "NULL fileName",
+				fileName,
+				r => r.Config.Timeout = 1000 * 120
+			);
+
+			// date modified >>  “jdev/sps/LoxAPPversion3
+			LoxoneResponseMessage result = await this.SendWebserviceAndWait(request2);
+			var stringResult = Encoding.UTF8.GetString(result.ReceivedMessage.Content);
+			return stringResult;
+		}
+
+		public async Task<string> GetLoxoneStructureAsJson() {
+			var result = await this.GetTextFile("data/LoxAPP3.json");
+			return result;
+		}
+
+		public async Task<bool> EnablebInStatusUpdate() {
+
+			var request = WebserviceRequest<string>.Create(
+				WebserviceRequestConfig.Auth(),
+				nameof(this.EnablebInStatusUpdate),
+				"jdev/sps/enablebinstatusupdate"
+			);
+
+			var response = await this.SendWebserviceAndWait(request);
+			string result = response.Value;
+			return result == "1";
+		}
+
+		public async Task SendKeepalive() {
+						
+			var keepaliveRequest = WebserviceRequest<string>.Create(
+				WebserviceRequestConfig.Auth(),
+				nameof(this.SendKeepalive),
+				"keepalive"
+			);
+			await this.SendWebservice(keepaliveRequest);
+		}
 	}
 }
