@@ -26,6 +26,8 @@ namespace Loxone.Communicator {
 		/// <param name="value">the text that should be normalised</param>
 		/// <returns>the normalised text</returns>
 		private string Normalize(string value) {
+			if(value == null) {  return null; }
+
 			value = value.Trim().TrimStart('/');
 			if (value.StartsWith("jdev", StringComparison.OrdinalIgnoreCase)) {
 				value = value.Substring(1);
