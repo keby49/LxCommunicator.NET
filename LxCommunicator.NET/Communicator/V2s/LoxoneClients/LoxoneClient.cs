@@ -11,14 +11,12 @@ namespace Loxone.Communicator {
 	public class LoxoneClient : IDisposable, ILoxoneOperations {
 		private static readonly object LockObject = new object();
 
-		//private readonly Subject<ResponseMessage> _messageReceivedSubject = new Subject<ResponseMessage>();
-
-		//public IObservable<ResponseMessage> MessageReceived => _messageReceivedSubject.AsObservable();
-
 		private readonly Subject<LoxoneMessage> messageReceivedAll = new Subject<LoxoneMessage>();
 
 		public LoxoneWebsocketClient client;
+
 		private TokenHandlerV3 handler;
+
 		private IDisposable loxoneMessageReceivedSubscription;
 
 		public LoxoneClient(LoxoneClientConfiguration loxoneClientConfiguration) {
@@ -53,10 +51,6 @@ namespace Loxone.Communicator {
 
 					messageReceivedAll.OnNext(msg);
 
-					//if(msg is LoxoneMessageWithResponse withResponse) {
-					//	if(withResponse.Header.Type)
-					//}
-
 					if (msg.MessageType == LoxoneMessageType.Systems) {
 						var systemMsg = (LoxoneMessageSystem)msg;
 						if (systemMsg != null) {
@@ -78,39 +72,10 @@ namespace Loxone.Communicator {
 		}
 
 		public async Task ReconnectAndAuthenticate() {
-			//if (this.handler?.Token != null) {
-			//	await this.StopAndKillToken();
-			//}
-
-			//this.client = new LoxoneWebsocketClient(this.LoxoneClientConfiguration.ConnectionConfiguration);
-
-			//this.loxoneMessageReceivedSubscription = this.client.LoxoneMessageReceived.Subscribe(async msg => {
-			//	if (this.LoxoneClientConfiguration.LogMessages) {
-			//		this.MessageLogger.Info(string.Format(CultureInfo.InvariantCulture, "Loxone message: {0}", JsonConvert.SerializeObject(msg, Formatting.None)));
-			//	}
-
-			//	this.messageReceivedAll.OnNext(msg);
-
-			//	if (msg.MessageType == LoxoneMessageType.Systems) {
-			//		var systemMsg = (LoxoneMessageSystem)msg;
-			//		if (systemMsg != null) {
-			//			switch (systemMsg.LoxoneMessageSystemType) {
-			//				case LoxoneMessageSystemType.Keepalive:
-			//					await this.SendKeepalive();
-			//					break;
-			//			}
-			//		}
-			//	}
-			//});
-
-			//this.handler = new TokenHandlerV3(this.client, this.LoxoneClientConfiguration.LoxoneUser.UserName);
 			await handler.CleanToken();
 			handler.SetPassword(LoxoneClientConfiguration.LoxoneUser.UserPassword);
-			//await this.client.StartAndConnection(handler);
 
 			if (await client.MiniserverReachable()) {
-				//this.TokenHandler = handler;
-				//await this.client.CreateClientAndStartToListen();
 				await client.HandleAuthenticate();
 			}
 			else {
