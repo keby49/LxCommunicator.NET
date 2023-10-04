@@ -44,10 +44,5 @@
       <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
-	
-
-  <ItemGroup>
-    <Folder Include="Communicator\WebModels\Loxone\Responses\" />
-  </ItemGroup>
 
 </Project>

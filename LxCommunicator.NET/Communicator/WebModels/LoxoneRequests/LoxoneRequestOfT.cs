@@ -44,7 +44,7 @@ namespace Loxone.Communicator {
 			//));
 
 			if (response == null) {
-				RequestState = WebserviceRequestState.Valid;
+				RequestState = LoxoneRequestState.Valid;
 				Response = response;
 				ResponseReceived.Set();
 				return true;
@@ -63,7 +63,7 @@ namespace Loxone.Communicator {
 
 					Response = response;
 					if (content.Code != System.Net.HttpStatusCode.OK) {
-						RequestState = WebserviceRequestState.NotValidWrongHttpStatusCode;
+						RequestState = LoxoneRequestState.NotValidWrongHttpStatusCode;
 
 						Response = response;
 						ResponseReceived.Set();
@@ -74,7 +74,7 @@ namespace Loxone.Communicator {
 					var typedContent = LoxoneContentHelper.ParseWebserviceContainer<T>(contentAsString);
 
 					if (typedContent != null) {
-						RequestState = WebserviceRequestState.Valid;
+						RequestState = LoxoneRequestState.Valid;
 
 						Response = response;
 						ResponseReceived.Set();

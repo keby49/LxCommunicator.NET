@@ -54,7 +54,7 @@ namespace Loxone.Communicator {
 		/// </summary>
 		public NameValueCollection Queries { get; internal set; } = System.Web.HttpUtility.ParseQueryString("");
 
-		public WebserviceRequestState RequestState { get; set; }
+		public LoxoneRequestState RequestState { get; set; }
 
 		public LoxoneResponseMessage ResponsedResponse { get; set; }
 
@@ -93,7 +93,7 @@ namespace Loxone.Communicator {
 				//	"TryValidateResponse NOT_HANDLED REQUEST 1 {4}|{0}: {3}Orginal: {1}{3}Sent: {2}",
 				//	this.Config.Encryption, this.CommandNotEncrypted, this.Command, Environment.NewLine, this.GetTitle()
 				//));
-				RequestState = WebserviceRequestState.Valid;
+				RequestState = LoxoneRequestState.Valid;
 
 				Response = response;
 				ResponseReceived.Set();
@@ -117,14 +117,14 @@ namespace Loxone.Communicator {
 
 					Response = response;
 					if (content.Code != System.Net.HttpStatusCode.OK) {
-						RequestState = WebserviceRequestState.NotValidWrongHttpStatusCode;
+						RequestState = LoxoneRequestState.NotValidWrongHttpStatusCode;
 
 						Response = response;
 						ResponseReceived.Set();
 						return true;
 					}
 
-					RequestState = WebserviceRequestState.Valid;
+					RequestState = LoxoneRequestState.Valid;
 
 					Response = response;
 					ResponseReceived.Set();
@@ -141,7 +141,7 @@ namespace Loxone.Communicator {
 							Environment.NewLine,
 							GetTitle()
 						));
-					RequestState = WebserviceRequestState.Valid;
+					RequestState = LoxoneRequestState.Valid;
 
 					Response = response;
 					ResponseReceived.Set();
@@ -161,11 +161,11 @@ namespace Loxone.Communicator {
 			if (!ResponseReceived.WaitOne(Config.Timeout)) {
 				//throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "WebSocket > Timeout"));
 				Response = null;
-				RequestState = WebserviceRequestState.Timeouted;
+				RequestState = LoxoneRequestState.Timeouted;
 				return Response;
 			}
 
-			RequestState = WebserviceRequestState.RespondedInTime;
+			RequestState = LoxoneRequestState.RespondedInTime;
 			ResponsedResponse = Response;
 			return Response;
 		}
