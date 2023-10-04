@@ -1,14 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Globalization;
-using System.Text;
-using System.Threading;
-using NLog;
-using Org.BouncyCastle.Asn1.Ocsp;
-
-namespace Loxone.Communicator {
+﻿namespace Loxone.Communicator {
 	public class WebserviceRequestConfig {
+		private const int DefaultTimeout = 5000;
+
 		/// <summary>
 		/// Whether the command requires token authentication or not
 		/// </summary>
@@ -23,44 +16,30 @@ namespace Loxone.Communicator {
 		/// The timeout how long the miniserver may take to respond
 		/// </summary>
 		public int Timeout { get; set; } = DefaultTimeout;
-
-		private const int DefaultTimeout = 5000;
 		//private const int DefaultTimeout = 5000 * 20;
 
 		public static WebserviceRequestConfig Auth(int timeout = DefaultTimeout) => new WebserviceRequestConfig {
-			Encryption = MessageEncryptionType.None,
-			Timeout = timeout,
-			NeedAuthentication = true,
+			Encryption = MessageEncryptionType.None, Timeout = timeout, NeedAuthentication = true,
 		};
 
 		public static WebserviceRequestConfig AuthWithEncryptionRequest(int timeout = DefaultTimeout) => new WebserviceRequestConfig {
-			Encryption = MessageEncryptionType.Request,
-			Timeout = timeout,
-			NeedAuthentication = true,
+			Encryption = MessageEncryptionType.Request, Timeout = timeout, NeedAuthentication = true,
 		};
 
 		public static WebserviceRequestConfig AuthWithEncryptionRequestAndResponse(int timeout = DefaultTimeout) => new WebserviceRequestConfig {
-			Encryption = MessageEncryptionType.RequestAndResponse,
-			Timeout = timeout,
-			NeedAuthentication = true,
+			Encryption = MessageEncryptionType.RequestAndResponse, Timeout = timeout, NeedAuthentication = true,
 		};
 
 		public static WebserviceRequestConfig NoAuth(int timeout = DefaultTimeout) => new WebserviceRequestConfig {
-			Encryption = MessageEncryptionType.None,
-			Timeout = timeout,
-			NeedAuthentication = false,
+			Encryption = MessageEncryptionType.None, Timeout = timeout, NeedAuthentication = false,
 		};
 
 		public static WebserviceRequestConfig NoAuthWithEncryptionRequest(int timeout = DefaultTimeout) => new WebserviceRequestConfig {
-			Encryption = MessageEncryptionType.Request,
-			Timeout = timeout,
-			NeedAuthentication = false,
+			Encryption = MessageEncryptionType.Request, Timeout = timeout, NeedAuthentication = false,
 		};
 
 		public static WebserviceRequestConfig NoAuthWithEncryptionRequestAndResponse(int timeout = DefaultTimeout) => new WebserviceRequestConfig {
-			Encryption = MessageEncryptionType.RequestAndResponse,
-			Timeout = timeout,
-			NeedAuthentication = false,
+			Encryption = MessageEncryptionType.RequestAndResponse, Timeout = timeout, NeedAuthentication = false,
 		};
 	}
 }

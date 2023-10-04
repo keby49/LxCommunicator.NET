@@ -1,7 +1,5 @@
 ﻿using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Loxone.Communicator {
 	public static class LxDateTime {
@@ -38,7 +36,6 @@ namespace Loxone.Communicator {
 			else {
 				return LxDateTime.Invalid;
 			}
-
 		}
 
 		public override void WriteJson(JsonWriter writer, DateTime value, JsonSerializer serializer) {

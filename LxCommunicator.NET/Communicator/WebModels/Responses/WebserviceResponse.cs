@@ -1,30 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Globalization;
-using System.Text;
-using System.Threading;
-using Newtonsoft.Json;
-using NLog;
-using Org.BouncyCastle.Asn1.Ocsp;
-
-namespace Loxone.Communicator {
+﻿namespace Loxone.Communicator {
 	/// <summary>
 	/// A container for a response received by the miniserver.
 	/// </summary>
 	public class WebserviceResponse {
-		/// <summary>
-		/// The header of the message. Contains information about the type and the length of the message.
-		/// </summary>
-		public LoxoneMessageHeader Header { get; }
-		/// <summary>
-		/// The actual message received by the miniserver.
-		/// </summary>
-		public byte[] Content { get; }
-		/// <summary>
-		/// The error / success code the webserviceClient returned
-		/// </summary>
-		public int? ClientCode { get; }
 		/// <summary>
 		/// Initialises a new webserviceResponse
 		/// </summary>
@@ -36,6 +14,21 @@ namespace Loxone.Communicator {
 			Content = content;
 			ClientCode = clientCode;
 		}
+
+		/// <summary>
+		/// The header of the message. Contains information about the type and the length of the message.
+		/// </summary>
+		public LoxoneMessageHeader Header { get; }
+
+		/// <summary>
+		/// The actual message received by the miniserver.
+		/// </summary>
+		public byte[] Content { get; }
+
+		/// <summary>
+		/// The error / success code the webserviceClient returned
+		/// </summary>
+		public int? ClientCode { get; }
 
 		/// <summary>
 		/// Get the webserviceResponse as webserviceContent
@@ -75,6 +68,7 @@ namespace Loxone.Communicator {
 		public string GetAsStringContent() {
 			return LoxoneContentHelper.GetStringFromBytes(Content);
 		}
+
 		/// <summary>
 		/// Get the webserviceResponse as text
 		/// </summary>

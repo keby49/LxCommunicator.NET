@@ -1,25 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Loxone.Communicator.Events {
+﻿namespace Loxone.Communicator.Events {
 	public class DaytimerEntry {
 		/// <summary>
 		/// Number of current mode
 		/// </summary>
 		public int Mode { get; private set; }
+
 		/// <summary>
 		/// From-time in minutes since midnight
 		/// </summary>
 		public int From { get; private set; }
+
 		/// <summary>
 		/// To-time in minutes since midnight
 		/// </summary>
 		public int To { get; private set; }
+
 		/// <summary>
 		/// Trigger
 		/// </summary>
 		public int NeedActivate { get; private set; }
+
 		/// <summary>
 		/// Value (if analog daytimer)
 		/// </summary>

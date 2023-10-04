@@ -1,27 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Loxone.Communicator;
+﻿namespace Loxone.Communicator;
 
 internal class LoxoneHttpClient {
 	private static HttpWebserviceClient client;
 
-
 	private static ConnectionConfiguration GetConfig() => new ConnectionConfiguration(
-	"testminiserver.loxone.com",
-	7777,
-	2,
+		"testminiserver.loxone.com",
+		7777,
+		2,
 		"098802e1-02b4-603c-ffffeee000d80cfd",
 		"LxCommunicator.NET.Websocket") { };
 
-	private static LoxoneUser GetUser() => new LoxoneUser { 
-		UserName = "lan",
-		UserPassword = "JQ9Hsa9tP5xtnW",
-	};
+	private static LoxoneUser GetUser() => new LoxoneUser { UserName = "lan", UserPassword = "JQ9Hsa9tP5xtnW", };
 
 	private static HttpWebserviceClient GetClient() {
 		return new HttpWebserviceClient(GetConfig());

@@ -1,37 +1,7 @@
-﻿using Newtonsoft.Json;
-using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.OpenSsl;
-using Org.BouncyCastle.Security;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
 
 namespace Loxone.Communicator {
 	public class ConnectionConfiguration {
-
-		/// <summary>
-		/// The ip of the miniserver
-		/// </summary>
-		public string IP { get; set; }
-		/// <summary>
-		/// The port of the miniserver
-		/// </summary>
-		public int Port { get; set; }
-
-		public ConnectionSessionConfiguration SessionConfiguration { get; set; }
-
-		public bool IsReconnectionEnabled { get; set; } = true;
-		public TimeSpan ReconnectTimeout { get; set; } = TimeSpan.FromSeconds(60);
-
-		public TimeSpan? KeepAliveInterval { get; set; } = TimeSpan.FromSeconds(1);
-
-
 		/// <summary>
 		/// Initialises a new instance of the ConnectionConfiguration.
 		/// </summary>
@@ -44,14 +14,9 @@ namespace Loxone.Communicator {
 			IP = ip;
 			Port = port;
 
-			var session = new ConnectionSessionConfiguration {
-				TokenPermission = permissions,
-				DeviceUuid = deviceUuid,
-				DeviceInfo = deviceInfo,
-			};
+			var session = new ConnectionSessionConfiguration { TokenPermission = permissions, DeviceUuid = deviceUuid, DeviceInfo = deviceInfo, };
 
-			this.SessionConfiguration = session;
-
+			SessionConfiguration = session;
 		}
 
 		public ConnectionConfiguration(string ip, int port, ConnectionSessionConfiguration sessionConfiguration) {
@@ -61,7 +26,25 @@ namespace Loxone.Communicator {
 
 			IP = ip;
 			Port = port;
-			this.SessionConfiguration = sessionConfiguration;
+			SessionConfiguration = sessionConfiguration;
 		}
+
+		/// <summary>
+		/// The ip of the miniserver
+		/// </summary>
+		public string IP { get; set; }
+
+		/// <summary>
+		/// The port of the miniserver
+		/// </summary>
+		public int Port { get; set; }
+
+		public ConnectionSessionConfiguration SessionConfiguration { get; set; }
+
+		public bool IsReconnectionEnabled { get; set; } = true;
+
+		public TimeSpan ReconnectTimeout { get; set; } = TimeSpan.FromSeconds(60);
+
+		public TimeSpan? KeepAliveInterval { get; set; } = TimeSpan.FromSeconds(1);
 	}
 }

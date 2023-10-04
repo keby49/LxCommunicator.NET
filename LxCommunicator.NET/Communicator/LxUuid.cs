@@ -1,7 +1,5 @@
 ﻿using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Loxone.Communicator {
 	public static class Uuid {
@@ -46,5 +44,4 @@ namespace Loxone.Communicator {
 			writer.WriteValue(value.GetUuidString());
 		}
 	}
-
 }

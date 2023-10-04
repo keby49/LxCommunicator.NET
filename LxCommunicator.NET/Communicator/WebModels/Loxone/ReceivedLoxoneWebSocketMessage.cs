@@ -1,12 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Globalization;
 using System.Net.WebSockets;
-using System.Text;
-using System.Threading;
-using NLog;
-using Org.BouncyCastle.Asn1.Ocsp;
 using Websocket.Client;
 
 namespace Loxone.Communicator {
@@ -19,44 +12,23 @@ namespace Loxone.Communicator {
 				throw new ArgumentNullException(nameof(responseMessage));
 			}
 
-			this.Time = DateTime.UtcNow;
-			this.ClientCode = clientCode;
+			Time = DateTime.UtcNow;
+			ClientCode = clientCode;
 
-			this.ProcessResponse(responseMessage);
+			ProcessResponse(responseMessage);
 		}
 
 		public ReceivedRawLoxoneWebSocketMessage(byte[] content, LoxoneWebSocketMessageType webSocketMessageType, int? clientCode) {
-			this.Time = DateTime.UtcNow;
-			this.ClientCode = clientCode;
-			this.Content = content;
-			this.WebSocketMessageType = webSocketMessageType;
+			Time = DateTime.UtcNow;
+			ClientCode = clientCode;
+			Content = content;
+			WebSocketMessageType = webSocketMessageType;
 		}
 
-		private void ProcessResponse(ResponseMessage responseMessage) {
-			switch (responseMessage.MessageType) {
-				case System.Net.WebSockets.WebSocketMessageType.Text:
-					this.Content = EncodeString(responseMessage.Text);
-					this.WebSocketMessageType = LoxoneWebSocketMessageType.TextMessage;
-					break;
-				case System.Net.WebSockets.WebSocketMessageType.Binary:
-					if (LoxoneMessageHeader.TryParse(responseMessage.Binary, out LoxoneMessageHeader header)) {
-						this.WebSocketMessageType = LoxoneWebSocketMessageType.HeaderMessage;
-						this.Header = header;
-						break;
-					}
-
-					this.Content = responseMessage.Binary;
-					break;
-				case System.Net.WebSockets.WebSocketMessageType.Close:
-					this.WebSocketMessageType = LoxoneWebSocketMessageType.CloseMessage;
-					break;
-				default:
-					this.WebSocketMessageType = LoxoneWebSocketMessageType.Unknow;
-					break;
-			}
-		}
 		public DateTime Time { get; }
+
 		public LoxoneWebSocketMessageType? WebSocketMessageType { get; private set; }
+
 		public LoxoneMessageHeader Header { get; set; }
 
 		/// <summary>
@@ -64,13 +36,9 @@ namespace Loxone.Communicator {
 		/// </summary>
 		public byte[] Content { get; private set; }
 
-		public void SetContent(byte[] bytes) {
-			this.Content = bytes;
-		}
-		
-		public bool HasHeader => this.Header != null;
+		public bool HasHeader => Header != null;
 
-		public bool HasContent => this.Content != null;
+		public bool HasContent => Content != null;
 
 		/// <summary>
 		/// The error / success code the webserviceClient returned
@@ -88,6 +56,34 @@ namespace Loxone.Communicator {
 			}
 
 			return LoxoneContentHelper.GetBytesAsString(content);
+		}
+
+		public void SetContent(byte[] bytes) {
+			Content = bytes;
+		}
+
+		private void ProcessResponse(ResponseMessage responseMessage) {
+			switch (responseMessage.MessageType) {
+				case System.Net.WebSockets.WebSocketMessageType.Text:
+					Content = EncodeString(responseMessage.Text);
+					WebSocketMessageType = LoxoneWebSocketMessageType.TextMessage;
+					break;
+				case System.Net.WebSockets.WebSocketMessageType.Binary:
+					if (LoxoneMessageHeader.TryParse(responseMessage.Binary, out LoxoneMessageHeader header)) {
+						WebSocketMessageType = LoxoneWebSocketMessageType.HeaderMessage;
+						Header = header;
+						break;
+					}
+
+					Content = responseMessage.Binary;
+					break;
+				case System.Net.WebSockets.WebSocketMessageType.Close:
+					WebSocketMessageType = LoxoneWebSocketMessageType.CloseMessage;
+					break;
+				default:
+					WebSocketMessageType = LoxoneWebSocketMessageType.Unknow;
+					break;
+			}
 		}
 	}
 }

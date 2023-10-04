@@ -1,8 +1,8 @@
 ﻿using System.Threading.Tasks;
 
 namespace Loxone.Communicator;
-public interface IWebserviceClient {
 
+public interface IWebserviceClient {
 	Session Session { get; }
 
 	Task<LoxoneResponseMessage> SendWebserviceAndWait(WebserviceRequest request);

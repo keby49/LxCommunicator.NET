@@ -1,7 +1,6 @@
 ﻿using Loxone.Communicator.Events;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Loxone.Communicator {
 	/// <summary>
@@ -9,33 +8,23 @@ namespace Loxone.Communicator {
 	/// </summary>
 	public class MessageReceivedEventArgs : EventArgs {
 		/// <summary>
-		/// The received Message
-		/// </summary>
-		public WebserviceResponse Response { get; }
-
-		/// <summary>
 		/// Initialises the eventArgs
 		/// </summary>
 		/// <param name="response">The received Message</param>
 		public MessageReceivedEventArgs(WebserviceResponse response) {
 			Response = response;
 		}
+
+		/// <summary>
+		/// The received Message
+		/// </summary>
+		public WebserviceResponse Response { get; }
 	}
 
 	/// <summary>
 	/// EventArgs for an event thrown at received valueStates
 	/// </summary>
 	public class EventStatesParsedEventArgs : EventArgs {
-		/// <summary>
-		/// The type of the received message/event
-		/// </summary>
-		public MessageType Type { get; }
-
-		/// <summary>
-		/// IEnumerable containing the acutal states
-		/// </summary>
-		public IEnumerable<EventState> States { get; }
-
 		/// <summary>
 		/// Initialises the eventArgs
 		/// </summary>
@@ -45,6 +34,16 @@ namespace Loxone.Communicator {
 			Type = type;
 			States = states;
 		}
+
+		/// <summary>
+		/// The type of the received message/event
+		/// </summary>
+		public MessageType Type { get; }
+
+		/// <summary>
+		/// IEnumerable containing the acutal states
+		/// </summary>
+		public IEnumerable<EventState> States { get; }
 	}
 
 	/// <summary>

@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Globalization;
-using System.Text;
-using System.Threading;
-using Newtonsoft.Json;
-using NLog;
-using Org.BouncyCastle.Asn1.Ocsp;
+﻿using Newtonsoft.Json;
 
 namespace Loxone.Communicator {
 	/// <summary>

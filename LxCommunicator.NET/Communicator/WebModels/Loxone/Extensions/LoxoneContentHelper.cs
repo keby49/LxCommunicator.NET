@@ -1,17 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Globalization;
-using System.Net.WebSockets;
+﻿using Newtonsoft.Json;
+using System;
 using System.Text;
-using System.Threading;
-using Newtonsoft.Json;
-using NLog;
-using Org.BouncyCastle.Asn1.Ocsp;
-using Websocket.Client;
 
 namespace Loxone.Communicator {
-
 	public static class LoxoneContentHelper {
 		public static byte[] GetBytesAsString(string content) {
 			if (content is null) {

@@ -1,5 +1,4 @@
 ﻿namespace Loxone.Communicator {
-
 	public enum WebserviceRequestState {
 		None,
 		Timeouted,

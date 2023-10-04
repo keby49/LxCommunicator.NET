@@ -1,41 +1,8 @@
 ﻿using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Loxone.Communicator {
 	public class Token {
-		/// <summary>
-		/// The tokenString, used for authentication to the miniserver
-		/// </summary>
-		[JsonProperty("token")]
-		public string JsonWebToken { get; private set; }
-		/// <summary>
-		/// The key of the token
-		/// </summary>
-		[JsonProperty("key")]
-		public string Key { get; private set; }
-		/// <summary>
-		/// The dateTime the token is valid until
-		/// </summary>
-		[JsonProperty("validUntil")]
-		[JsonConverter(typeof(LxDateTimeConverter))]
-		public DateTime ValidUntil { get; private set; }
-		/// <summary>
-		/// The current permissions the token has
-		/// </summary>
-		[JsonProperty("tokenRights")]
-		public int TokenRights { get; private set; }
-		/// <summary>
-		/// Flag, wheter the user has a safe password or not
-		/// </summary>
-		[JsonProperty("unsecurePass")]
-		public bool UnsecurePass { get; private set; }
-
-		public void SetTokenToWrong() {
-			this.JsonWebToken = "xxx";
-		}
-
 		/// <summary>
 		/// Initialises a new token object used for authentication.
 		/// </summary>
@@ -50,6 +17,41 @@ namespace Loxone.Communicator {
 			ValidUntil = validUntil;
 			TokenRights = tokenRights;
 			UnsecurePass = unsecurePass;
+		}
+
+		/// <summary>
+		/// The tokenString, used for authentication to the miniserver
+		/// </summary>
+		[JsonProperty("token")]
+		public string JsonWebToken { get; private set; }
+
+		/// <summary>
+		/// The key of the token
+		/// </summary>
+		[JsonProperty("key")]
+		public string Key { get; private set; }
+
+		/// <summary>
+		/// The dateTime the token is valid until
+		/// </summary>
+		[JsonProperty("validUntil")]
+		[JsonConverter(typeof(LxDateTimeConverter))]
+		public DateTime ValidUntil { get; private set; }
+
+		/// <summary>
+		/// The current permissions the token has
+		/// </summary>
+		[JsonProperty("tokenRights")]
+		public int TokenRights { get; private set; }
+
+		/// <summary>
+		/// Flag, wheter the user has a safe password or not
+		/// </summary>
+		[JsonProperty("unsecurePass")]
+		public bool UnsecurePass { get; private set; }
+
+		public void SetTokenToWrong() {
+			JsonWebToken = "xxx";
 		}
 	}
 }

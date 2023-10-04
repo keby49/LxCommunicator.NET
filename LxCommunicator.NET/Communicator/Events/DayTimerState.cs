@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace Loxone.Communicator.Events {
 	public class DaytimerState : EventState {
@@ -9,10 +7,12 @@ namespace Loxone.Communicator.Events {
 		/// Default value
 		/// </summary>
 		public double DefaultValue { get; private set; }
+
 		/// <summary>
 		/// Number of entries
 		/// </summary>
 		public int NrEntries { get; private set; }
+
 		/// <summary>
 		/// The actual Daytimer entries
 		/// </summary>
@@ -33,6 +33,7 @@ namespace Loxone.Communicator.Events {
 				BinaryReader entryReader = new BinaryReader(new MemoryStream(reader.ReadBytes(24)));
 				state.Entries.Add(DaytimerEntry.Parse(entryReader));
 			}
+
 			return state;
 		}
 

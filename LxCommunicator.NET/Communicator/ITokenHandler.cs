@@ -3,8 +3,13 @@ using System.Threading.Tasks;
 
 namespace Loxone.Communicator;
 
-public interface ITokenHandler
-{
+public interface ITokenHandler {
+	/// <summary>
+	/// Event, fired when the token updates.
+	/// Contains the tokenHandler with the updated token in the eventArgs
+	/// </summary>
+	event EventHandler<ConnectionAuthenticatedEventArgs> OnUpdateToken;
+
 	/// <summary>
 	/// The webserviceClient used for communication with the miniserver
 	/// </summary>
@@ -24,12 +29,6 @@ public interface ITokenHandler
 	/// Whether the tokenHandler is allowed to renew the token automatically
 	/// </summary>
 	bool CanRenewToken { get; set; }
-
-	/// <summary>
-	/// Event, fired when the token updates.
-	/// Contains the tokenHandler with the updated token in the eventArgs
-	/// </summary>
-	event EventHandler<ConnectionAuthenticatedEventArgs> OnUpdateToken;
 
 	/// <summary>
 	/// Disposes the current TokenHandler

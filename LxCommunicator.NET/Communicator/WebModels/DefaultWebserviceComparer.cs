@@ -1,11 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Globalization;
-using System.Text;
-using System.Threading;
-using NLog;
-using Org.BouncyCastle.Asn1.Ocsp;
 
 namespace Loxone.Communicator {
 	/// <summary>
@@ -16,28 +10,12 @@ namespace Loxone.Communicator {
 		/// The used comparer
 		/// </summary>
 		public static IComparer<string> Comparer = new DefaultWebserviceComparer();
+
 		/// <summary>
 		/// Initialises a new comparer
 		/// </summary>
 		private DefaultWebserviceComparer() { }
-		/// <summary>
-		/// Normalises a string
-		/// </summary>
-		/// <param name="value">the text that should be normalised</param>
-		/// <returns>the normalised text</returns>
-		private string Normalize(string value) {
-			if(value == null) {  return null; }
 
-			value = value.Trim().TrimStart('/');
-			if (value.StartsWith("jdev", StringComparison.OrdinalIgnoreCase)) {
-				value = value.Substring(1);
-			}
-
-			//value = value.Replace("+", "%2B");
-			//value = Uri.EscapeDataString(value);
-
-			return value;
-		}
 		/// <summary>
 		/// Compares 2 texts
 		/// </summary>
@@ -48,6 +26,25 @@ namespace Loxone.Communicator {
 			x = Normalize(x);
 			y = Normalize(y);
 			return StringComparer.OrdinalIgnoreCase.Compare(x, y);
+		}
+
+		/// <summary>
+		/// Normalises a string
+		/// </summary>
+		/// <param name="value">the text that should be normalised</param>
+		/// <returns>the normalised text</returns>
+		private string Normalize(string value) {
+			if (value == null) { return null; }
+
+			value = value.Trim().TrimStart('/');
+			if (value.StartsWith("jdev", StringComparison.OrdinalIgnoreCase)) {
+				value = value.Substring(1);
+			}
+
+			//value = value.Replace("+", "%2B");
+			//value = Uri.EscapeDataString(value);
+
+			return value;
 		}
 	}
 }

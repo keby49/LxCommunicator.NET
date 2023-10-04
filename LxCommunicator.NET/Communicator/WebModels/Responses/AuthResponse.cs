@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Globalization;
-using System.Text;
-using System.Threading;
-using Newtonsoft.Json;
-using NLog;
-using Org.BouncyCastle.Asn1.Ocsp;
+﻿using Newtonsoft.Json;
 
 namespace Loxone.Communicator {
 	/// <summary>
@@ -18,11 +10,13 @@ namespace Loxone.Communicator {
 		/// </summary>
 		[JsonProperty("validUntil")]
 		public int ValidUntil { get; set; }
+
 		/// <summary>
 		/// The rights the current token provides to the user
 		/// </summary>
 		[JsonProperty("tokenRights")]
 		public int TokenRights { get; set; }
+
 		/// <summary>
 		/// Determines whether the password of the current user if secured or not.
 		/// </summary>

@@ -1,21 +1,17 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Net;
-using System.Text;
+﻿using System;
 
 namespace Loxone.Communicator {
-
 	/// <summary>
 	/// A container for a response received by the miniserver.
 	/// </summary>
 	public class LoxoneResponseMessage {
+		private string contentAsString = null;
+
 		public LoxoneResponseMessage(ReceivedRawLoxoneWebSocketMessage receivedMessage, LoxoneResponseMessageCategory loxoneCategory, LoxoneDataFormat loxoneFormat) {
-			this.ReceivedMessage = receivedMessage ?? throw new ArgumentNullException(nameof(receivedMessage));
-			this.Header = this.ReceivedMessage.Header;
-			this.LoxoneCategory = loxoneCategory;
-			this.LoxoneFormat = loxoneFormat;
+			ReceivedMessage = receivedMessage ?? throw new ArgumentNullException(nameof(receivedMessage));
+			Header = ReceivedMessage.Header;
+			LoxoneCategory = loxoneCategory;
+			LoxoneFormat = loxoneFormat;
 		}
 
 		public ReceivedRawLoxoneWebSocketMessage ReceivedMessage { get; }
@@ -27,25 +23,22 @@ namespace Loxone.Communicator {
 
 		public LoxoneDataFormat LoxoneFormat { get; }
 
-		public MessageType? LoxoneMessageType => this.Header?.Type;
+		public MessageType? LoxoneMessageType => Header?.Type;
 
 		//[JsonProperty(Order = 1)]
 		public bool Handled { get; set; }
 
 		public void SetContent(byte[] bytes) {
-			this.ReceivedMessage?.SetContent(bytes);
-			this.contentAsString = null;
+			ReceivedMessage?.SetContent(bytes);
+			contentAsString = null;
 		}
-
-		private string contentAsString = null;
 
 		public string TryGetContentAsString() {
-			if (this.contentAsString == null) {
-				this.contentAsString = LoxoneContentHelper.GetStringFromBytes(this.ReceivedMessage.Content);
+			if (contentAsString == null) {
+				contentAsString = LoxoneContentHelper.GetStringFromBytes(ReceivedMessage.Content);
 			}
 
-			return this.contentAsString;
+			return contentAsString;
 		}
-
 	}
 }

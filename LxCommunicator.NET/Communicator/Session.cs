@@ -1,57 +1,13 @@
 ﻿using Newtonsoft.Json;
-using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.OpenSsl;
-using Org.BouncyCastle.Security;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Loxone.Communicator {
 	public class Session {
-		/// <summary>
-		/// The public key of the server
-		/// </summary>
-		public string PublicKey { get; private set; }
-		/// <summary>
-		/// The session key of the current session
-		/// </summary>
-		private string SessionKey { get; set; }
-		/// <summary>
-		/// The client used for communicating with the miniserver
-		/// </summary>
-		public WebserviceClient Client { get; set; }
-		public ConnectionSessionConfiguration ConnectionSessionConfiguration { get; }
-
-		/// <summary>
-		/// The permission the current user has / should have
-		/// </summary>
-		public int TokenPermission { get; private set; }
-		/// <summary>
-		/// The uuid of the current device
-		/// </summary>
-		public string DeviceUuid { get; private set; }
-		/// <summary>
-		/// The info of the current device
-		/// </summary>
-		public string DeviceInfo { get; private set; }
-		/// <summary>
-		/// The current AES key
-		/// </summary>
-		public string AesKey { get; private set; }
-		/// <summary>
-		/// The current AES iv
-		/// </summary>
-		public string AesIv { get; private set; }
-		/// <summary>
-		/// The current random salt
-		/// </summary>
-		public string Salt { get; private set; }
-
 		/// <summary>
 		/// Creates a new instance of the session object. <see cref="Session"/> is used to store information about the current connection to the miniserver.
 		/// </summary>
@@ -74,13 +30,60 @@ namespace Loxone.Communicator {
 			}
 
 			Client = client;
-			this.ConnectionSessionConfiguration = connectionSessionConfiguration;
-			TokenPermission = this.ConnectionSessionConfiguration.TokenPermission;
-			DeviceUuid = this.ConnectionSessionConfiguration.DeviceUuid;
-			DeviceInfo = this.ConnectionSessionConfiguration.DeviceInfo;
+			ConnectionSessionConfiguration = connectionSessionConfiguration;
+			TokenPermission = ConnectionSessionConfiguration.TokenPermission;
+			DeviceUuid = ConnectionSessionConfiguration.DeviceUuid;
+			DeviceInfo = ConnectionSessionConfiguration.DeviceInfo;
 			GenerateAesKeyIv();
 			GetRandomSalt(4);
 		}
+
+		/// <summary>
+		/// The public key of the server
+		/// </summary>
+		public string PublicKey { get; private set; }
+
+		/// <summary>
+		/// The client used for communicating with the miniserver
+		/// </summary>
+		public WebserviceClient Client { get; set; }
+
+		public ConnectionSessionConfiguration ConnectionSessionConfiguration { get; }
+
+		/// <summary>
+		/// The permission the current user has / should have
+		/// </summary>
+		public int TokenPermission { get; private set; }
+
+		/// <summary>
+		/// The uuid of the current device
+		/// </summary>
+		public string DeviceUuid { get; private set; }
+
+		/// <summary>
+		/// The info of the current device
+		/// </summary>
+		public string DeviceInfo { get; private set; }
+
+		/// <summary>
+		/// The current AES key
+		/// </summary>
+		public string AesKey { get; private set; }
+
+		/// <summary>
+		/// The current AES iv
+		/// </summary>
+		public string AesIv { get; private set; }
+
+		/// <summary>
+		/// The current random salt
+		/// </summary>
+		public string Salt { get; private set; }
+
+		/// <summary>
+		/// The session key of the current session
+		/// </summary>
+		private string SessionKey { get; set; }
 
 		/// <summary>
 		/// Get a userKey object from the Miniserver
@@ -89,8 +92,8 @@ namespace Loxone.Communicator {
 		/// <returns>A userKey object containing the key, the salt and the hashAlgorythm</returns>
 		public async Task<UserKey> GetUserKey(string username) {
 			var request = WebserviceRequest<UserKey>.Create(
-				WebserviceRequestConfig.Auth(), 
-				nameof(this.GetUserKey),
+				WebserviceRequestConfig.Auth(),
+				nameof(GetUserKey),
 				$"jdev/sys/getkey2/{username}"
 			);
 
@@ -107,7 +110,7 @@ namespace Loxone.Communicator {
 			if (PublicKey == null) {
 				var request = WebserviceRequest<string>.Create(
 					WebserviceRequestConfig.NoAuth(),
-					nameof(this.GetMiniserverPublicKey),
+					nameof(GetMiniserverPublicKey),
 					$"jdev/sys/getPublicKey"
 				);
 
@@ -118,6 +121,7 @@ namespace Loxone.Communicator {
 
 				PublicKey = PemToXml(publicKey);
 			}
+
 			return PublicKey;
 		}
 
@@ -129,6 +133,7 @@ namespace Loxone.Communicator {
 			if (SessionKey == null) {
 				SessionKey = await Cryptography.EncryptRSA($"{AesKey}:{AesIv}", this);
 			}
+
 			return SessionKey;
 		}
 
@@ -145,6 +150,7 @@ namespace Loxone.Communicator {
 			AesKey = BitConverter.ToString(aes.Key).Replace("-", "");
 			AesIv = BitConverter.ToString(aes.IV).Replace("-", "");
 		}
+
 		/// <summary>
 		/// Generates a random salt
 		/// </summary>
@@ -176,7 +182,6 @@ namespace Loxone.Communicator {
 			//		}
 			//		);
 			//}, rsa => rsa.ToXmlString(false));
-
 		}
 
 		/// <summary>

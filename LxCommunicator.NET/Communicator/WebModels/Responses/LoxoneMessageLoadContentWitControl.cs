@@ -1,13 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Globalization;
+﻿using Newtonsoft.Json;
 using System.Net;
-using System.Text;
-using System.Threading;
-using Newtonsoft.Json;
-using NLog;
-using Org.BouncyCastle.Asn1.Ocsp;
 
 namespace Loxone.Communicator {
 	/// <summary>
@@ -19,6 +11,7 @@ namespace Loxone.Communicator {
 		/// </summary>
 		[JsonProperty("control")]
 		public string Control { get; set; }
+
 		/// <summary>
 		/// Http sttus code if sending and receiving the webservice succeeded
 		/// </summary>

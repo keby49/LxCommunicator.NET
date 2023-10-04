@@ -1,23 +1,8 @@
-﻿using Org.BouncyCastle.Crypto.Engines;
-using Org.BouncyCastle.Crypto.Modes;
-using Org.BouncyCastle.Crypto.Paddings;
-using Org.BouncyCastle.Crypto.Parameters;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Net.Http;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Loxone.Communicator {
-
+﻿namespace Loxone.Communicator {
 	public abstract class LoxoneLanClientWithHttp : LoxoneLanClient {
 		protected LoxoneLanClientWithHttp(ConnectionConfiguration connectionConfiguration)
 			: base(connectionConfiguration) {
-			Session = new Session(null, this.ConnectionConfiguration.SessionConfiguration);
+			Session = new Session(null, ConnectionConfiguration.SessionConfiguration);
 			HttpWebserviceClient = new HttpWebserviceClient(connectionConfiguration, Session);
 			Session.Client = HttpWebserviceClient;
 		}

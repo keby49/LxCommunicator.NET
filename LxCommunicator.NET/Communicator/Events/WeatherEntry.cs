@@ -1,19 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Loxone.Communicator.Events {
+﻿namespace Loxone.Communicator.Events {
 	public class WeatherEntry {
 		public int TimeStamp { get; private set; }
+
 		public int WeatherType { get; private set; }
+
 		public int WindDirection { get; private set; }
+
 		public int SolarRadiation { get; private set; }
+
 		public int RelativeHumidity { get; private set; }
+
 		public double Temperature { get; private set; }
+
 		public double PerceivedTemperature { get; private set; }
+
 		public double DewPoint { get; private set; }
+
 		public double Precipitation { get; private set; }
+
 		public double WindSpeed { get; private set; }
+
 		public double BarometricPressure { get; private set; }
 
 		/// <summary>

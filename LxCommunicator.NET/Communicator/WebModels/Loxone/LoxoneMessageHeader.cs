@@ -1,11 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Globalization;
-using System.Text;
-using System.Threading;
-using NLog;
-using Org.BouncyCastle.Asn1.Ocsp;
 
 namespace Loxone.Communicator {
 	/// <summary>
@@ -16,10 +10,12 @@ namespace Loxone.Communicator {
 		/// The messageType (e.g. textMessage, valueStateEvent, ...) of the received message
 		/// </summary>
 		public MessageType Type { get; private set; }
+
 		/// <summary>
 		/// Whether or not another header is sent by the miniserver before the actual message.
 		/// </summary>
 		public bool Estimated { get; private set; }
+
 		/// <summary>
 		/// The lenght of the received message
 		/// </summary>
@@ -38,12 +34,10 @@ namespace Loxone.Communicator {
 			if (bytes == null || bytes.Length != 8 || bytes[0] != 3) {
 				return false;
 			}
+
 			try {
 				header = new LoxoneMessageHeader() {
-					Type = (MessageType)bytes[1],
-					Length = BitConverter.ToUInt32(bytes, 4),
-					Estimated = (bytes[2] & (byte)128) == 128,
-					Time = DateTime.UtcNow,
+					Type = (MessageType)bytes[1], Length = BitConverter.ToUInt32(bytes, 4), Estimated = (bytes[2] & (byte)128) == 128, Time = DateTime.UtcNow,
 				};
 				return true;
 			}
@@ -53,7 +47,7 @@ namespace Loxone.Communicator {
 		}
 
 		public override string ToString() {
-			return string.Format(CultureInfo.InvariantCulture, "Header: Type={0}, Estimated={1}, Length={2}", this.Type, this.Estimated, this.Length);
+			return string.Format(CultureInfo.InvariantCulture, "Header: Type={0}, Estimated={1}, Length={2}", Type, Estimated, Length);
 		}
 	}
 }

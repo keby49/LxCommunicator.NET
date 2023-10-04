@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace Loxone.Communicator.Events {
 	public class WeatherState : EventState {
@@ -9,6 +7,7 @@ namespace Loxone.Communicator.Events {
 		/// The date since the last update
 		/// </summary>
 		public uint LastUpdate { get; private set; }
+
 		/// <summary>
 		/// The number of entries
 		/// </summary>
@@ -34,6 +33,7 @@ namespace Loxone.Communicator.Events {
 				BinaryReader entryReader = new BinaryReader(new MemoryStream(reader.ReadBytes(24)));
 				state.Entries.Add(WeatherEntry.Parse(entryReader));
 			}
+
 			return state;
 		}
 

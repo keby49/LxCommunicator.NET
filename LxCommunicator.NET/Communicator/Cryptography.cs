@@ -3,7 +3,6 @@ using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Paddings;
 using Org.BouncyCastle.Crypto.Parameters;
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
@@ -31,6 +30,7 @@ namespace Loxone.Communicator {
 				string byteValue = hexInput.Substring(index * 2, 2);
 				data[index] = byte.Parse(byteValue, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
 			}
+
 			return data;
 		}
 
@@ -63,13 +63,13 @@ namespace Loxone.Communicator {
 			if (input == null) {
 				return null;
 			}
+
 			byte[] inputBytes = null;
 
 			try {
 				inputBytes = Convert.FromBase64String(input);
 			}
 			catch (FormatException ex) {
-
 				throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "{0}.{1}Input:{1}{2}", ex.Message, Environment.NewLine, input ?? "NULL"), ex);
 			}
 

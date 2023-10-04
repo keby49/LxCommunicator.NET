@@ -1,9 +1,7 @@
-﻿using NLog;
-using System;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 namespace Loxone.Communicator;
+
 public interface ILoxoneOperations {
 	Task<string> GetTextFile(string fileName);
 

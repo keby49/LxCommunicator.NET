@@ -1,12 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-
-namespace Loxone.Communicator.Events {
+﻿namespace Loxone.Communicator.Events {
 	public class ValueState : EventState {
-
 		/// <summary>
 		/// The actual value of the State
 		/// </summary>
