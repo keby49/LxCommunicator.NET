@@ -11,7 +11,7 @@ namespace Loxone.Communicator {
 	/// A container for a response received by the miniserver.
 	/// </summary>
 	public class LoxoneMessageWithResponse : LoxoneMessage {
-		public LoxoneMessageWithResponse(LoxoneMessageHeader header, WebserviceResponse rawResponse, LoxoneMessageType messageType) : base(messageType) {
+		public LoxoneMessageWithResponse(LoxoneMessageHeader header, LoxoneResponseMessage rawResponse, LoxoneMessageType messageType) : base(messageType) {
 			Header = header;
 			RawResponse = rawResponse;
 		}
@@ -20,6 +20,6 @@ namespace Loxone.Communicator {
 		public LoxoneMessageHeader Header { get; set; }
 
 		[JsonProperty(Order = 50)]
-		public WebserviceResponse RawResponse { get; set; }
+		public LoxoneResponseMessage RawResponse { get; set; }
 	}
 }

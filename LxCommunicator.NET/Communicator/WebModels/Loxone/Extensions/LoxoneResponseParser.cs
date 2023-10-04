@@ -23,19 +23,15 @@ namespace Loxone.Communicator {
 
 		private static LoxoneMessageHeader TryGetMessageHeader(ReceivedRawLoxoneWebSocketMessage message, List<LoxoneMessageHeader> messageHeaderList) {
 
-			if (message.WebSocketMessageType != LoxoneWebSocketMessageType.TextMessage && message.WebSocketMessageType != LoxoneWebSocketMessageType.BinarryMessage) {
-				return null;
-			}
+			//if (message.WebSocketMessageType != LoxoneWebSocketMessageType.TextMessage && message.WebSocketMessageType != LoxoneWebSocketMessageType.BinarryMessage) {
+			//	return null;
+			//}
 
-			if (messageHeaderList == null) {
+			if (messageHeaderList == null || messageHeaderList.Count == 0) {
 				return null;
 			}
 
 			lock (messageHeaderList) {
-				if (messageHeaderList.Count == 0) {
-					return null;
-				}
-				else {
 					var xxx = new List<LoxoneMessageHeader>(messageHeaderList);
 					xxx.Reverse();
 
@@ -46,7 +42,6 @@ namespace Loxone.Communicator {
 
 					messageHeaderList.Remove(result);
 					return result;
-				}
 			}
 		}
 
@@ -115,6 +110,10 @@ namespace Loxone.Communicator {
 				throw new ArgumentNullException(nameof(decrypt));
 			}
 
+			if(message.Header?.Type == MessageType.EventTableValueStates) {
+
+			}
+
 			LoxoneResponseMessage messageToHandle = null;
 			switch (message.WebSocketMessageType) {
 				case LoxoneWebSocketMessageType.HeaderMessage:
@@ -137,12 +136,14 @@ namespace Loxone.Communicator {
 					}
 
 					return null;
-				case LoxoneWebSocketMessageType.TextMessage:
-				case LoxoneWebSocketMessageType.BinarryMessage:
+				//case LoxoneWebSocketMessageType.TextMessage:
+				//case LoxoneWebSocketMessageType.BinarryMessage:
+				default:
 					var header = TryGetMessageHeader(message, messageHeaderList);
 
 					if (header == null && headerRequired) {
-						throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Message without header. {0}", JsonConvert.SerializeObject(message)));
+						break;
+						//throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Message without header. {0}", JsonConvert.SerializeObject(message)));
 					}
 					message.Header = header;
 

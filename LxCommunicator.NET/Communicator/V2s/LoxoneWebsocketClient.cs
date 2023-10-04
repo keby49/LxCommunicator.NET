@@ -428,15 +428,64 @@ namespace Loxone.Communicator {
 		public Logger Logger { get; }
 
 		private void BeginListening() {
-			this.WebSocket.MessageReceived.Subscribe(msg => {
-				ReceivedRawLoxoneWebSocketMessage responseToHandle = new ReceivedRawLoxoneWebSocketMessage(msg, (int?)WebSocket?.NativeClient.CloseStatus);
+			this.WebSocket.MessageReceived.Subscribe(message => {
+				ReceivedRawLoxoneWebSocketMessage responseToHandle = new ReceivedRawLoxoneWebSocketMessage(message, (int?)WebSocket?.NativeClient.CloseStatus);
 
-				if (responseToHandle != null) {
-					this.HandleResponseWithHeader(responseToHandle);
+				if(responseToHandle != null) {
+					this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "MESSAGE:RawLoxone >> L[{1}] >> {0}", responseToHandle.Header, responseToHandle.Content?.Length));
 				}
 				else {
-
+					this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "MESSAGE:RawLoxone >> NULL"));
 				}
+				
+
+				if (responseToHandle != null) {
+					LoxoneResponseMessage messageToHandle = LoxoneResponseParser.ParseResponseWithHeader(true, responseToHandle, c => this.Decrypt(c), this.MessageHeaderList);
+
+					if (messageToHandle != null) {
+						this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "MESSAGE:LoxoneResponse >> L[{1}] >> {0}", messageToHandle.Header, messageToHandle.ReceivedMessage?.Content?.Length));
+					}
+					else {
+						this.Logger.Info(string.Format(CultureInfo.InvariantCulture, "MESSAGE:LoxoneResponse >> NULL"));
+					}
+
+					if (messageToHandle != null) {
+						var handled = this.HandleWebserviceResponse(messageToHandle);
+
+						if (handled) {
+							messageToHandle.Handled = true;
+						}
+
+						if (!handled) {
+							loxoneMessageResponseReceived.OnNext(messageToHandle);
+						}
+
+						if (messageToHandle.ReceivedMessage?.Header?.Length == 7000) {
+
+						}
+
+						if (
+							messageToHandle.ReceivedMessage?.Header?.Type == MessageType.EventTableValueStates
+							||
+							messageToHandle.ReceivedMessage?.Header?.Type == MessageType.EventTableTextStates
+							||
+							messageToHandle.ReceivedMessage?.Header?.Type == MessageType.EventTableDaytimerStates
+						) {
+
+						}
+
+						if (messageToHandle is LoxoneResponseMessageWithEventStates withEvents) {
+							LoxoneMessageEventStates send = new LoxoneMessageEventStates(messageToHandle.Header, messageToHandle) {
+								EventStates = withEvents.EventStates,
+							};
+
+							loxoneMessageReceived.OnNext(send);
+						}
+					}
+				}
+
+				//			//	loxoneMessageResponseReceived.OnNext(messageToHandle);
+
 			});
 		}
 
@@ -444,18 +493,7 @@ namespace Loxone.Communicator {
 
 
 		private void HandleResponseWithHeader(ReceivedRawLoxoneWebSocketMessage message) {
-			LoxoneResponseMessage messageToHandle = LoxoneResponseParser.ParseResponseWithHeader(true, message, c => this.Decrypt(c), this.MessageHeaderList);
 
-			if (messageToHandle != null) {
-				var x = messageToHandle as LoxoneResponseMessageWithContainer;
-				var handled = this.HandleWebserviceResponse(messageToHandle);
-				if (handled) {
-					messageToHandle.Handled = true;
-				}
-				else {
-
-				}
-			}
 
 
 			//switch (message.WebSocketMessageType) {
@@ -697,7 +735,7 @@ namespace Loxone.Communicator {
 		/// <param name="type">The expected type of the eventTable</param>
 		/// <returns>Whether or not parsing the eventTable was successful</returns>
 		private bool ParseEventTableOld(LoxoneMessageWithResponse loxoneMessage) {
-			byte[] content = loxoneMessage.RawResponse.Content;
+			byte[] content = loxoneMessage.RawResponse.ReceivedMessage.Content;
 			MessageType type = loxoneMessage.Header.Type;
 
 			List<EventState> eventStates = new List<EventState>();
@@ -805,7 +843,7 @@ namespace Loxone.Communicator {
 		}
 
 		public async Task SendKeepalive() {
-						
+
 			var keepaliveRequest = WebserviceRequest<string>.Create(
 				WebserviceRequestConfig.Auth(),
 				nameof(this.SendKeepalive),
