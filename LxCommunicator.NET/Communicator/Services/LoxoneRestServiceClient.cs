@@ -71,8 +71,8 @@ namespace Loxone.Communicator {
 		/// </summary>
 		/// <param name="request">The Request that should be sent</param>
 		/// <returns>The Response the miniserver returns</returns>
-		public override async Task<LoxoneResponseMessage> SendWebserviceAndWait(WebserviceRequest request) {
-			WebserviceRequest encRequest = await GetEncryptedRequest(request);
+		public override async Task<LoxoneResponseMessage> SendWebserviceAndWait(LoxoneRequest request) {
+			LoxoneRequest encRequest = await GetEncryptedRequest(request);
 
 			Uri url = GetLoxoneCommandUri(encRequest);
 
@@ -105,7 +105,7 @@ namespace Loxone.Communicator {
 			return response;
 		}
 
-		public override async Task<LoxoneResponseMessage> SendApiRequest(WebserviceRequest request) {
+		public override async Task<LoxoneResponseMessage> SendApiRequest(LoxoneRequest request) {
 			return await SendWebserviceAndWait(request);
 		}
 
@@ -118,7 +118,7 @@ namespace Loxone.Communicator {
 			CancellationTokenSource?.Dispose();
 		}
 
-		private Uri GetLoxoneCommandUri(WebserviceRequest encRequest) {
+		private Uri GetLoxoneCommandUri(LoxoneRequest encRequest) {
 			return new UriBuilder() {
 				Scheme = "http",
 				Host = ConnectionConfiguration.IP,
@@ -133,12 +133,12 @@ namespace Loxone.Communicator {
 		/// </summary>
 		/// <param name="request">The request that should be encrypted</param>
 		/// <returns>the encrypted clone of the given request</returns>
-		private async Task<WebserviceRequest> GetEncryptedRequest(WebserviceRequest request) {
+		private async Task<LoxoneRequest> GetEncryptedRequest(LoxoneRequest request) {
 			if (request == null) {
 				return null;
 			}
 
-			WebserviceRequest encRequest = (WebserviceRequest)request.Clone();
+			LoxoneRequest encRequest = (LoxoneRequest)request.Clone();
 			if (request.Config.NeedAuthentication && TokenHandler != null) {
 				//add authentication if needed
 				if (TokenHandler.Token == null) {

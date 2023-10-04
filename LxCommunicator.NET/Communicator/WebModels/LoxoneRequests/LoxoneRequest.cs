@@ -11,7 +11,7 @@ namespace Loxone.Communicator {
 	/// An object containing information about a request to the miniserver, such as command, encryptionType,...
 	/// Can be cloned!
 	/// </summary>
-	public class WebserviceRequest : ICloneable {
+	public class LoxoneRequest : ICloneable {
 		/// <summary>
 		/// The matching response to the request
 		/// </summary>
@@ -25,8 +25,8 @@ namespace Loxone.Communicator {
 		/// <param name="command">The command that should be sent to the miniserver</param>
 		/// <param name="encryption">How the command should be encrypted</param>
 		/// <param name="needAuthentication">Whether or not the command requires token authentication</param>
-		public WebserviceRequest(
-			WebserviceRequestConfig config,
+		public LoxoneRequest(
+			LoxoneRequestConfig config,
 			string command,
 			string title = null
 		) {
@@ -47,7 +47,7 @@ namespace Loxone.Communicator {
 
 		public string CommandNotEncrypted { get; set; }
 
-		public WebserviceRequestConfig Config { get; private set; }
+		public LoxoneRequestConfig Config { get; private set; }
 
 		/// <summary>
 		/// A collection of queries that should be appended to the command
@@ -60,11 +60,11 @@ namespace Loxone.Communicator {
 
 		protected Logger Logger { get; }
 
-		public static WebserviceRequest Create(
-			WebserviceRequestConfig config,
+		public static LoxoneRequest Create(
+			LoxoneRequestConfig config,
 			string title,
 			string command,
-			Action<WebserviceRequest> advanced = null) {
+			Action<LoxoneRequest> advanced = null) {
 			if (config is null) {
 				throw new ArgumentNullException(nameof(config));
 			}
@@ -73,7 +73,7 @@ namespace Loxone.Communicator {
 				throw new ArgumentException($"'{nameof(command)}' cannot be null or empty.", nameof(command));
 			}
 
-			var result = new WebserviceRequest(config, command, title);
+			var result = new LoxoneRequest(config, command, title);
 
 			if (advanced != null) {
 				advanced(result);
@@ -176,7 +176,7 @@ namespace Loxone.Communicator {
 		/// <returns>A cloned request</returns>
 		public virtual object Clone() {
 			//return this.DeepClone();
-			return new WebserviceRequest(Config, Command) { Queries = System.Web.HttpUtility.ParseQueryString(Queries.ToString()), };
+			return new LoxoneRequest(Config, Command) { Queries = System.Web.HttpUtility.ParseQueryString(Queries.ToString()), };
 		}
 
 		/// <summary>

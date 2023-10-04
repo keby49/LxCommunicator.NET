@@ -5,16 +5,16 @@ namespace Loxone.Communicator {
 	/// A generic request to the miniserver. Inherits from non-generic webserviceRequest
 	/// </summary>
 	/// <typeparam name="T">The type of the requested response</typeparam>
-	public class WebserviceRequest<T> : WebserviceRequest {
-		public WebserviceRequest(WebserviceRequestConfig config, string command, string title = null)
+	public class LoxoneRequest<T> : LoxoneRequest {
+		public LoxoneRequest(LoxoneRequestConfig config, string command, string title = null)
 			: base(config, command, title) {
 		}
 
-		public static WebserviceRequest<T> Create(
-			WebserviceRequestConfig config,
+		public static LoxoneRequest<T> Create(
+			LoxoneRequestConfig config,
 			string title,
 			string command,
-			Action<WebserviceRequest<T>> advanced = null) {
+			Action<LoxoneRequest<T>> advanced = null) {
 			if (config is null) {
 				throw new ArgumentNullException(nameof(config));
 			}
@@ -23,7 +23,7 @@ namespace Loxone.Communicator {
 				throw new ArgumentException($"'{nameof(command)}' cannot be null or empty.", nameof(command));
 			}
 
-			var result = new WebserviceRequest<T>(config, command, title);
+			var result = new LoxoneRequest<T>(config, command, title);
 
 			if (advanced != null) {
 				advanced(result);
@@ -105,7 +105,7 @@ namespace Loxone.Communicator {
 		/// </summary>
 		/// <returns>the cloned request</returns>
 		public override object Clone() {
-			return new WebserviceRequest<T>(Config, Command) { Queries = System.Web.HttpUtility.ParseQueryString(Queries.ToString()), };
+			return new LoxoneRequest<T>(Config, Command) { Queries = System.Web.HttpUtility.ParseQueryString(Queries.ToString()), };
 		}
 	}
 }

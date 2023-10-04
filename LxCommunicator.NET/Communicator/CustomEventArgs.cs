@@ -30,7 +30,7 @@ namespace Loxone.Communicator {
 		/// </summary>
 		/// <param name="type">The received messageType</param>
 		/// <param name="states">the actual states</param>
-		public EventStatesParsedEventArgs(MessageType type, IEnumerable<EventState> states) {
+		public EventStatesParsedEventArgs(LoxoneMessageType type, IEnumerable<EventState> states) {
 			Type = type;
 			States = states;
 		}
@@ -38,7 +38,7 @@ namespace Loxone.Communicator {
 		/// <summary>
 		/// The type of the received message/event
 		/// </summary>
-		public MessageType Type { get; }
+		public LoxoneMessageType Type { get; }
 
 		/// <summary>
 		/// IEnumerable containing the acutal states

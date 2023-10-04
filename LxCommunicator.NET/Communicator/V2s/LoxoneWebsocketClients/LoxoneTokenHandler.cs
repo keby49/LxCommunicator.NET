@@ -100,8 +100,8 @@ namespace Loxone.Communicator {
 			hmacSha.Key = Cryptography.GetByteArrayFromHex(userKey.Key);
 			string hash = Cryptography.GetHexFromByteArray(hmacSha.ComputeHash(Encoding.UTF8.GetBytes($"{Username}:{pwHash}")));
 
-			var request = WebserviceRequest<Token>.Create(
-				WebserviceRequestConfig.NoAuthWithEncryptionRequestAndResponse(),
+			var request = LoxoneRequest<Token>.Create(
+				LoxoneRequestConfig.NoAuthWithEncryptionRequestAndResponse(),
 				nameof(RequestNewToken),
 				$"jdev/sys/getjwt/{hash}/{Username}/{WsClient.Session.TokenPermission}/{WsClient.Session.DeviceUuid}/{WsClient.Session.DeviceInfo}"
 			);
@@ -130,8 +130,8 @@ namespace Loxone.Communicator {
 			}
 
 			string hash = await GetTokenHash();
-			var request = WebserviceRequest<Token>.Create(
-				WebserviceRequestConfig.AuthWithEncryptionRequestAndResponse(),
+			var request = LoxoneRequest<Token>.Create(
+				LoxoneRequestConfig.AuthWithEncryptionRequestAndResponse(),
 				nameof(RenewToken),
 				$"jdev/sys/refreshjwt/{hash}/{Username}"
 			);
@@ -149,8 +149,8 @@ namespace Loxone.Communicator {
 		public async Task KillToken() {
 			string hash = await GetTokenHash();
 			try {
-				var request = WebserviceRequest<object>.Create(
-					WebserviceRequestConfig.AuthWithEncryptionRequestAndResponse(),
+				var request = LoxoneRequest<object>.Create(
+					LoxoneRequestConfig.AuthWithEncryptionRequestAndResponse(),
 					nameof(KillToken),
 					$"jdev/sys/killtoken/{hash}/{Username}",
 					r => r.Config.Timeout = 0

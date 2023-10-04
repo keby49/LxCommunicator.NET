@@ -2,7 +2,7 @@
 	/// <summary>
 	/// Possible types for a message
 	/// </summary>
-	public enum MessageType : byte {
+	public enum LoxoneMessageType : byte {
 		Text = 0,
 		Binary = 1,
 		EventTableValueStates = 2,

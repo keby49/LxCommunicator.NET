@@ -5,7 +5,7 @@ namespace Loxone.Communicator {
 	/// A container for a response received by the miniserver.
 	/// </summary>
 	public class LoxoneMessageWithResponse : LoxoneMessage {
-		public LoxoneMessageWithResponse(LoxoneMessageHeader header, LoxoneResponseMessage rawResponse, LoxoneMessageType messageType)
+		public LoxoneMessageWithResponse(LoxoneMessageHeader header, LoxoneResponseMessage rawResponse, LoxoneMessageKind messageType)
 			: base(messageType) {
 			Header = header;
 			RawResponse = rawResponse;

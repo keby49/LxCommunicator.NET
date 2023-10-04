@@ -1,5 +1,5 @@
 ﻿namespace Loxone.Communicator {
-	public class WebserviceRequestConfig {
+	public class LoxoneRequestConfig {
 		private const int DefaultTimeout = 5000;
 
 		/// <summary>
@@ -18,27 +18,27 @@
 		public int Timeout { get; set; } = DefaultTimeout;
 		//private const int DefaultTimeout = 5000 * 20;
 
-		public static WebserviceRequestConfig Auth(int timeout = DefaultTimeout) => new WebserviceRequestConfig {
+		public static LoxoneRequestConfig Auth(int timeout = DefaultTimeout) => new LoxoneRequestConfig {
 			Encryption = MessageEncryptionType.None, Timeout = timeout, NeedAuthentication = true,
 		};
 
-		public static WebserviceRequestConfig AuthWithEncryptionRequest(int timeout = DefaultTimeout) => new WebserviceRequestConfig {
+		public static LoxoneRequestConfig AuthWithEncryptionRequest(int timeout = DefaultTimeout) => new LoxoneRequestConfig {
 			Encryption = MessageEncryptionType.Request, Timeout = timeout, NeedAuthentication = true,
 		};
 
-		public static WebserviceRequestConfig AuthWithEncryptionRequestAndResponse(int timeout = DefaultTimeout) => new WebserviceRequestConfig {
+		public static LoxoneRequestConfig AuthWithEncryptionRequestAndResponse(int timeout = DefaultTimeout) => new LoxoneRequestConfig {
 			Encryption = MessageEncryptionType.RequestAndResponse, Timeout = timeout, NeedAuthentication = true,
 		};
 
-		public static WebserviceRequestConfig NoAuth(int timeout = DefaultTimeout) => new WebserviceRequestConfig {
+		public static LoxoneRequestConfig NoAuth(int timeout = DefaultTimeout) => new LoxoneRequestConfig {
 			Encryption = MessageEncryptionType.None, Timeout = timeout, NeedAuthentication = false,
 		};
 
-		public static WebserviceRequestConfig NoAuthWithEncryptionRequest(int timeout = DefaultTimeout) => new WebserviceRequestConfig {
+		public static LoxoneRequestConfig NoAuthWithEncryptionRequest(int timeout = DefaultTimeout) => new LoxoneRequestConfig {
 			Encryption = MessageEncryptionType.Request, Timeout = timeout, NeedAuthentication = false,
 		};
 
-		public static WebserviceRequestConfig NoAuthWithEncryptionRequestAndResponse(int timeout = DefaultTimeout) => new WebserviceRequestConfig {
+		public static LoxoneRequestConfig NoAuthWithEncryptionRequestAndResponse(int timeout = DefaultTimeout) => new LoxoneRequestConfig {
 			Encryption = MessageEncryptionType.RequestAndResponse, Timeout = timeout, NeedAuthentication = false,
 		};
 	}

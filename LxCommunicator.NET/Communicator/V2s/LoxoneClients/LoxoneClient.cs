@@ -51,7 +51,7 @@ namespace Loxone.Communicator {
 
 					messageReceivedAll.OnNext(msg);
 
-					if (msg.MessageType == LoxoneMessageType.Systems) {
+					if (msg.MessageType == LoxoneMessageKind.Systems) {
 						var systemMsg = (LoxoneMessageSystem)msg;
 						if (systemMsg != null) {
 							switch (systemMsg.LoxoneMessageSystemType) {
@@ -86,9 +86,9 @@ namespace Loxone.Communicator {
 		}
 
 		public async Task SendMessage(string messageTitle, MessageEncryptionType encryptionType, string messageContent) {
-			var config = new WebserviceRequestConfig() { NeedAuthentication = true, Encryption = encryptionType, };
+			var config = new LoxoneRequestConfig() { NeedAuthentication = true, Encryption = encryptionType, };
 
-			WebserviceRequest request = WebserviceRequest.Create(config, messageTitle, messageContent);
+			LoxoneRequest request = LoxoneRequest.Create(config, messageTitle, messageContent);
 			await client.SendWebservice(request);
 		}
 

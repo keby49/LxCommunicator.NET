@@ -23,7 +23,7 @@ namespace Loxone.Communicator {
 
 		public LoxoneDataFormat LoxoneFormat { get; }
 
-		public MessageType? LoxoneMessageType => Header?.Type;
+		public LoxoneMessageType? LoxoneMessageType => Header?.Type;
 
 		//[JsonProperty(Order = 1)]
 		public bool Handled { get; set; }

@@ -9,7 +9,7 @@ namespace Loxone.Communicator {
 		/// <summary>
 		/// The messageType (e.g. textMessage, valueStateEvent, ...) of the received message
 		/// </summary>
-		public MessageType Type { get; private set; }
+		public LoxoneMessageType Type { get; private set; }
 
 		/// <summary>
 		/// Whether or not another header is sent by the miniserver before the actual message.
@@ -37,7 +37,7 @@ namespace Loxone.Communicator {
 
 			try {
 				header = new LoxoneMessageHeader() {
-					Type = (MessageType)bytes[1], Length = BitConverter.ToUInt32(bytes, 4), Estimated = (bytes[2] & (byte)128) == 128, Time = DateTime.UtcNow,
+					Type = (LoxoneMessageType)bytes[1], Length = BitConverter.ToUInt32(bytes, 4), Estimated = (bytes[2] & (byte)128) == 128, Time = DateTime.UtcNow,
 				};
 				return true;
 			}

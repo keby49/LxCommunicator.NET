@@ -27,7 +27,7 @@ namespace Loxone.Communicator {
 		/// <summary>
 		/// List of all sent requests that wait for a response
 		/// </summary>
-		private readonly List<WebserviceRequest> Requests = new List<WebserviceRequest>();
+		private readonly List<LoxoneRequest> Requests = new List<LoxoneRequest>();
 
 		/// <summary>
 		/// The cancellationTokenSource used for cancelling the listener and receiving messages
@@ -115,8 +115,8 @@ namespace Loxone.Communicator {
 		/// <param name="handler">The tokenhandler that should be used</param>
 		public async Task HandleAuthenticate() {
 			string key = await Session.GetSessionKey();
-			var requestKey = WebserviceRequest<string>.Create(
-				WebserviceRequestConfig.Auth(),
+			var requestKey = LoxoneRequest<string>.Create(
+				LoxoneRequestConfig.Auth(),
 				nameof(HandleAuthenticate) + "_KeyExchange",
 				$"jdev/sys/keyexchange/{key}"
 			);
@@ -155,8 +155,8 @@ namespace Loxone.Communicator {
 				}
 
 				string hash = await TokenHandler?.GetTokenHash();
-				var request = WebserviceRequest<string>.Create(
-					WebserviceRequestConfig.AuthWithEncryptionRequestAndResponse(),
+				var request = LoxoneRequest<string>.Create(
+					LoxoneRequestConfig.AuthWithEncryptionRequestAndResponse(),
 					nameof(HandleAuthenticate) + "_AuthWithToken",
 					$"authwithtoken/{hash}/{TokenHandler.Username}"
 				);
@@ -240,8 +240,8 @@ namespace Loxone.Communicator {
 		/// <returns>Wheter the miniserver is reachable or not</returns>
 		public async Task<bool> MiniserverReachable() {
 			try {
-				var request = WebserviceRequest<string>.Create(
-					WebserviceRequestConfig.NoAuth(),
+				var request = LoxoneRequest<string>.Create(
+					LoxoneRequestConfig.NoAuth(),
 					nameof(MiniserverReachable),
 					$"jdev/cfg/api"
 				);
@@ -266,8 +266,8 @@ namespace Loxone.Communicator {
 		//	throw new NotImplementedException();
 		//}
 
-		public async Task<LoxoneMessageLoadContentWitControl<T>> SendWebserviceAndWait<T>(WebserviceRequest<T> request) {
-			var r = (WebserviceRequest)request;
+		public async Task<LoxoneMessageLoadContentWitControl<T>> SendWebserviceAndWait<T>(LoxoneRequest<T> request) {
+			var r = (LoxoneRequest)request;
 			var rsp = await SendWebserviceAndWait(r);
 			if (rsp == null) {
 				return null;
@@ -283,7 +283,7 @@ namespace Loxone.Communicator {
 			//return (response)?.TryGetAsWebserviceContent<T>();
 		}
 
-		public virtual async Task<LoxoneResponseMessage> SendApiRequest(WebserviceRequest request) {
+		public virtual async Task<LoxoneResponseMessage> SendApiRequest(LoxoneRequest request) {
 			return await HttpWebserviceClient.SendWebserviceAndWait(request);
 		}
 
@@ -296,11 +296,11 @@ namespace Loxone.Communicator {
 			}
 		}
 
-		public async Task SendWebservice(WebserviceRequest request) {
+		public async Task SendWebservice(LoxoneRequest request) {
 			await SendWebserviceInternal(false, request);
 		}
 
-		public async Task<LoxoneResponseMessage> SendWebserviceAndWait(WebserviceRequest request) {
+		public async Task<LoxoneResponseMessage> SendWebserviceAndWait(LoxoneRequest request) {
 			return await SendWebserviceInternal(true, request);
 		}
 
@@ -322,8 +322,8 @@ namespace Loxone.Communicator {
 			}
 		}
 
-		public async Task<LoxoneMessageLoadContentWitControl<T>> SendApiRequest<T>(WebserviceRequest<T> request) {
-			var r = (WebserviceRequest)request;
+		public async Task<LoxoneMessageLoadContentWitControl<T>> SendApiRequest<T>(LoxoneRequest<T> request) {
+			var r = (LoxoneRequest)request;
 			var response = await SendApiRequest(r);
 			return ((LoxoneResponseMessageWithContainer)response)?.TryGetAsWebserviceContent<T>();
 		}
@@ -331,8 +331,8 @@ namespace Loxone.Communicator {
 		// Commands
 
 		public async Task<string> GetTextFile(string fileName) {
-			WebserviceRequest request2 = WebserviceRequest.Create(
-				WebserviceRequestConfig.Auth(),
+			LoxoneRequest request2 = LoxoneRequest.Create(
+				LoxoneRequestConfig.Auth(),
 				nameof(GetTextFile) + fileName ?? "NULL fileName",
 				fileName,
 				r => r.Config.Timeout = 1000 * 120
@@ -350,8 +350,8 @@ namespace Loxone.Communicator {
 		}
 
 		public async Task<bool> EnablebInStatusUpdate() {
-			var request = WebserviceRequest<string>.Create(
-				WebserviceRequestConfig.Auth(),
+			var request = LoxoneRequest<string>.Create(
+				LoxoneRequestConfig.Auth(),
 				nameof(EnablebInStatusUpdate),
 				"jdev/sps/enablebinstatusupdate"
 			);
@@ -362,8 +362,8 @@ namespace Loxone.Communicator {
 		}
 
 		public async Task SendKeepalive() {
-			var keepaliveRequest = WebserviceRequest<string>.Create(
-				WebserviceRequestConfig.Auth(),
+			var keepaliveRequest = LoxoneRequest<string>.Create(
+				LoxoneRequestConfig.Auth(),
 				nameof(SendKeepalive),
 				"keepalive"
 			);
@@ -381,7 +381,7 @@ namespace Loxone.Communicator {
 			return new Uri($"ws://{ConnectionConfiguration.IP}:{ConnectionConfiguration.Port}/ws/rfc6455");
 		}
 
-		private async Task<LoxoneResponseMessage> SendWebserviceInternal(bool wait, WebserviceRequest request) {
+		private async Task<LoxoneResponseMessage> SendWebserviceInternal(bool wait, LoxoneRequest request) {
 			//if (request.NeedAuthentication) {
 			//	if (this.reconnected && this.TokenHandler.Token == null) {
 
@@ -433,8 +433,8 @@ namespace Loxone.Communicator {
 
 					commandNotEscaped = $"jdev/sys/fenc/{commandNotEscaped}";
 					//TODO >> Request >> Set parent
-					var encryptedRequest = WebserviceRequest.Create(
-						WebserviceRequestConfig.Auth(),
+					var encryptedRequest = LoxoneRequest.Create(
+						LoxoneRequestConfig.Auth(),
 						request.Title ?? "NULL" + "_Encryped" + nameof(MessageEncryptionType.RequestAndResponse),
 						command,
 						r => {
@@ -475,7 +475,7 @@ namespace Loxone.Communicator {
 			}
 		}
 
-		private async Task<LoxoneResponseMessage> SendMessage(bool wait, WebserviceRequest request) {
+		private async Task<LoxoneResponseMessage> SendMessage(bool wait, LoxoneRequest request) {
 			Logger.Info(
 				string.Format(
 					CultureInfo.InvariantCulture,
@@ -564,11 +564,11 @@ namespace Loxone.Communicator {
 							}
 
 							if (
-								messageToHandle.ReceivedMessage?.Header?.Type == MessageType.EventTableValueStates
+								messageToHandle.ReceivedMessage?.Header?.Type == LoxoneMessageType.EventTableValueStates
 								||
-								messageToHandle.ReceivedMessage?.Header?.Type == MessageType.EventTableTextStates
+								messageToHandle.ReceivedMessage?.Header?.Type == LoxoneMessageType.EventTableTextStates
 								||
-								messageToHandle.ReceivedMessage?.Header?.Type == MessageType.EventTableDaytimerStates
+								messageToHandle.ReceivedMessage?.Header?.Type == LoxoneMessageType.EventTableDaytimerStates
 							) {
 							}
 
@@ -668,7 +668,7 @@ namespace Loxone.Communicator {
 				Logger.Info(string.Format(CultureInfo.InvariantCulture, "NO REQUESTs TO HANDLE."));
 			}
 
-			foreach (WebserviceRequest request in Enumerable.Reverse(Requests)) {
+			foreach (LoxoneRequest request in Enumerable.Reverse(Requests)) {
 				if (request.TryValidateResponse(loxoneMessage)) {
 					lock (Requests) {
 						Requests.Remove(request);
@@ -741,7 +741,7 @@ namespace Loxone.Communicator {
 		/// <returns>Whether or not parsing the eventTable was successful</returns>
 		private bool ParseEventTableOld(LoxoneMessageWithResponse loxoneMessage) {
 			byte[] content = loxoneMessage.RawResponse.ReceivedMessage.Content;
-			MessageType type = loxoneMessage.Header.Type;
+			LoxoneMessageType type = loxoneMessage.Header.Type;
 
 			List<EventState> eventStates = new List<EventState>();
 			using (BinaryReader reader = new BinaryReader(new MemoryStream(content))) {
@@ -749,19 +749,19 @@ namespace Loxone.Communicator {
 					do {
 						EventState state = null;
 						switch (type) {
-							case MessageType.EventTableValueStates:
+							case LoxoneMessageType.EventTableValueStates:
 								state = ValueState.Parse(reader);
 								break;
 
-							case MessageType.EventTableTextStates:
+							case LoxoneMessageType.EventTableTextStates:
 								state = TextState.Parse(reader);
 								break;
 
-							case MessageType.EventTableDaytimerStates:
+							case LoxoneMessageType.EventTableDaytimerStates:
 								state = DaytimerState.Parse(reader);
 								break;
 
-							case MessageType.EventTableWeatherStates:
+							case LoxoneMessageType.EventTableWeatherStates:
 								state = WeatherState.Parse(reader);
 								break;
 

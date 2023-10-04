@@ -7,11 +7,11 @@ namespace Loxone.Communicator {
 	/// </summary>
 	public class LoxoneMessageEventStates : LoxoneMessageWithResponse {
 		public LoxoneMessageEventStates(LoxoneMessageHeader header, LoxoneResponseMessage rawResponse)
-			: base(header, rawResponse, LoxoneMessageType.EventStates) {
+			: base(header, rawResponse, LoxoneMessageKind.EventStates) {
 		}
 
 		public LoxoneMessageEventStates(LoxoneMessageWithResponse loxoneMessage)
-			: base(loxoneMessage.Header, loxoneMessage.RawResponse, LoxoneMessageType.EventStates) {
+			: base(loxoneMessage.Header, loxoneMessage.RawResponse, LoxoneMessageKind.EventStates) {
 		}
 
 		public List<EventState> EventStates { get; set; }

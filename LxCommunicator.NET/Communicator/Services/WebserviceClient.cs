@@ -34,8 +34,8 @@ namespace Loxone.Communicator {
 		/// <typeparam name="T">The object that should be returned in Value</typeparam>
 		/// <param name="request">The Request that should be sent</param>
 		/// <returns>The Response the miniserver returns</returns>
-		public async Task<LoxoneMessageLoadContentWitControl<T>> SendWebserviceAndWait<T>(WebserviceRequest<T> request) {
-			var response = (LoxoneResponseMessageWithContainer)await SendWebserviceAndWait((WebserviceRequest)request);
+		public async Task<LoxoneMessageLoadContentWitControl<T>> SendWebserviceAndWait<T>(LoxoneRequest<T> request) {
+			var response = (LoxoneResponseMessageWithContainer)await SendWebserviceAndWait((LoxoneRequest)request);
 			return response?.TryGetAsWebserviceContent<T>();
 		}
 
@@ -44,7 +44,7 @@ namespace Loxone.Communicator {
 		/// </summary>
 		/// <param name="request">The Request that should be sent</param>
 		/// <returns>The Response the miniserver returns</returns>
-		public virtual async Task<LoxoneResponseMessage> SendWebserviceAndWait(WebserviceRequest request) {
+		public virtual async Task<LoxoneResponseMessage> SendWebserviceAndWait(LoxoneRequest request) {
 			return await Task.FromResult<LoxoneResponseMessage>(null);
 		}
 
@@ -55,16 +55,16 @@ namespace Loxone.Communicator {
 			TokenHandler?.Dispose();
 		}
 
-		public virtual async Task<LoxoneResponseMessage> SendApiRequest(WebserviceRequest request) {
+		public virtual async Task<LoxoneResponseMessage> SendApiRequest(LoxoneRequest request) {
 			return await Task.FromResult<LoxoneResponseMessage>(null);
 		}
 
-		public async Task<LoxoneMessageLoadContentWitControl<T>> SendApiRequest<T>(WebserviceRequest<T> request) {
-			var response = (LoxoneResponseMessageWithContainer)await SendApiRequest((WebserviceRequest)request);
+		public async Task<LoxoneMessageLoadContentWitControl<T>> SendApiRequest<T>(LoxoneRequest<T> request) {
+			var response = (LoxoneResponseMessageWithContainer)await SendApiRequest((LoxoneRequest)request);
 			return response?.TryGetAsWebserviceContent<T>();
 		}
 
-		public Task SendWebservice(WebserviceRequest request) {
+		public Task SendWebservice(LoxoneRequest request) {
 			throw new NotImplementedException();
 		}
 	}

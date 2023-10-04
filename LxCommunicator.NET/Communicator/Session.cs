@@ -91,8 +91,8 @@ namespace Loxone.Communicator {
 		/// <param name="username">The username of the user trying to authenticate</param>
 		/// <returns>A userKey object containing the key, the salt and the hashAlgorythm</returns>
 		public async Task<UserKey> GetUserKey(string username) {
-			var request = WebserviceRequest<UserKey>.Create(
-				WebserviceRequestConfig.Auth(),
+			var request = LoxoneRequest<UserKey>.Create(
+				LoxoneRequestConfig.Auth(),
 				nameof(GetUserKey),
 				$"jdev/sys/getkey2/{username}"
 			);
@@ -108,8 +108,8 @@ namespace Loxone.Communicator {
 		/// <returns>A string containing the public key</returns>
 		public async Task<string> GetMiniserverPublicKey() {
 			if (PublicKey == null) {
-				var request = WebserviceRequest<string>.Create(
-					WebserviceRequestConfig.NoAuth(),
+				var request = LoxoneRequest<string>.Create(
+					LoxoneRequestConfig.NoAuth(),
 					nameof(GetMiniserverPublicKey),
 					$"jdev/sys/getPublicKey"
 				);

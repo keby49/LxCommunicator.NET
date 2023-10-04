@@ -1,5 +1,5 @@
 ﻿namespace Loxone.Communicator {
-	public enum LoxoneMessageType {
+	public enum LoxoneMessageKind {
 		Uknown,
 		Systems,
 		EventStates,

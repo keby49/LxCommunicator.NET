@@ -5,12 +5,12 @@ namespace Loxone.Communicator {
 	/// A container for a response received by the miniserver.
 	/// </summary>
 	public class LoxoneMessage {
-		public LoxoneMessage(LoxoneMessageType messageType) {
+		public LoxoneMessage(LoxoneMessageKind messageType) {
 			MessageType = messageType;
 		}
 
 		[JsonProperty(Order = 0)]
-		public LoxoneMessageType MessageType { get; set; }
+		public LoxoneMessageKind MessageType { get; set; }
 
 		[JsonProperty(Order = 1)]
 		public bool Handled { get; set; }

@@ -3,7 +3,7 @@
 namespace Loxone.Communicator {
 	public class LoxoneMessageSystem : LoxoneMessage {
 		public LoxoneMessageSystem(LoxoneMessageSystemType loxoneMessageSystemType)
-			: base(LoxoneMessageType.Systems) {
+			: base(LoxoneMessageKind.Systems) {
 			LoxoneMessageSystemType = loxoneMessageSystemType;
 		}
 

@@ -18,7 +18,7 @@ namespace Loxone.Communicator {
 				throw new ArgumentNullException(nameof(decrypt));
 			}
 
-			if (message.Header?.Type == MessageType.EventTableValueStates) {
+			if (message.Header?.Type == LoxoneMessageType.EventTableValueStates) {
 			}
 
 			LoxoneResponseMessage messageToHandle = null;
@@ -29,11 +29,11 @@ namespace Loxone.Communicator {
 					}
 
 					switch (message.Header.Type) {
-						case MessageType.OutOfService:
+						case LoxoneMessageType.OutOfService:
 							//TODO >> MTV >> Message >> OutOfService
 							messageToHandle = new LoxoneResponseMessage(message, LoxoneResponseMessageCategory.Systems, LoxoneDataFormat.None);
 							break;
-						case MessageType.KeepAlive:
+						case LoxoneMessageType.KeepAlive:
 							messageToHandle = new LoxoneResponseMessage(message, LoxoneResponseMessageCategory.Systems, LoxoneDataFormat.None);
 							//TODO >> MTV >> Message >> KeepAlive
 							break;
@@ -121,7 +121,7 @@ namespace Loxone.Communicator {
 		private static bool ParseEventTable(ReceivedRawLoxoneWebSocketMessage loxoneMessage, out LoxoneResponseMessageWithEventStates resultMessage) {
 			resultMessage = null;
 			byte[] content = loxoneMessage.Content;
-			MessageType? type = loxoneMessage.Header?.Type;
+			LoxoneMessageType? type = loxoneMessage.Header?.Type;
 			if (type == null) {
 				return false;
 			}
@@ -132,19 +132,19 @@ namespace Loxone.Communicator {
 					do {
 						EventState state = null;
 						switch (type) {
-							case MessageType.EventTableValueStates:
+							case LoxoneMessageType.EventTableValueStates:
 								state = ValueState.Parse(reader);
 								break;
 
-							case MessageType.EventTableTextStates:
+							case LoxoneMessageType.EventTableTextStates:
 								state = TextState.Parse(reader);
 								break;
 
-							case MessageType.EventTableDaytimerStates:
+							case LoxoneMessageType.EventTableDaytimerStates:
 								state = DaytimerState.Parse(reader);
 								break;
 
-							case MessageType.EventTableWeatherStates:
+							case LoxoneMessageType.EventTableWeatherStates:
 								state = WeatherState.Parse(reader);
 								break;
 
