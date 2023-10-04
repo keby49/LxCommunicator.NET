@@ -18,71 +18,7 @@ using Websocket.Client.Models;
 
 namespace Loxone.Communicator {
 	public class LoxoneWebsocketClient : LoxoneLanClientWithHttp, IWebserviceClient, ILoxoneOperations {
-		///// <summary>
-		///// The listener starts to wait for messsages from the miniserver
-		///// </summary>
-		//private void BeginListeningOLD() {
-		//	this.WebSocket.MessageReceived.Subscribe(msg => {
-		//		WebserviceResponse responseToHandle = null;
-		//		switch (msg.MessageType) {
-		//			case WebSocketMessageType.Text:
-		//				if (this.lastHeader == null) {
-		//					throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Message header not found."));
-		//				}
-
-		//				responseToHandle = new WebserviceResponse(lastHeader, Encoding.UTF8.GetBytes(msg.Text), (int?)WebSocket?.NativeClient.CloseStatus);
-		//				this.lastHeader = null;
-
-		//				break;
-		//			case WebSocketMessageType.Binary:
-		//				if (this.lastHeader != null) {
-		//					LoxoneMessageHeader headerSecond;
-		//					if (LoxoneMessageHeader.TryParse(msg.Binary, out headerSecond)) {
-		//						// cannot have two headers
-		//						break;
-		//					}
-		//				}
-
-		//				if (this.lastHeader != null) {
-		//					responseToHandle = new WebserviceResponse(lastHeader, msg.Binary, (int?)WebSocket?.NativeClient.CloseStatus);
-		//					this.lastHeader = null;
-		//				}
-		//				else {
-		//					LoxoneMessageHeader header;
-		//					if (!LoxoneMessageHeader.TryParse(msg.Binary, out header)) {
-		//						throw new WebserviceException("Received incomplete Data: \n" + Encoding.UTF8.GetString(msg.Binary));
-		//					}
-		//					else {
-		//						lastHeader = header;
-		//					}
-		//				}
-		//				break;
-		//			case WebSocketMessageType.Close:
-		//				break;
-
-		//		}
-
-		//		if (responseToHandle != null) {
-		//			this.HandleResponseWithHeaderOld(responseToHandle);
-		//		}
-		//	});
-		//}
-
-		//private void HandleResponseWithHeaderOld(WebserviceResponse responseToHandle) {
-		//	var message = new LoxoneMessageWithResponse(responseToHandle.Header, responseToHandle, LoxoneMessageType.Uknown) {
-		//	};
-
-		//	if (this.HandleWebserviceResponseOld(message)) {
-		//		return;
-		//	}
-
-		//	if (this.ParseEventTable(message)) {
-		//		return;
-		//	}
-
-		//	this.loxoneMessageReceived.OnNext(message);
-		//}
-
+		
 		[Obsolete]
 		private readonly Subject<LoxoneMessage> loxoneMessageReceived = new Subject<LoxoneMessage>();
 

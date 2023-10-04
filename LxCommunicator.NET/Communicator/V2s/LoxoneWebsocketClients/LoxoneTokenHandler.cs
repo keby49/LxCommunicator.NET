@@ -9,7 +9,7 @@ namespace Loxone.Communicator {
 	/// A handler used for managing the Token. Can create, renew and kill tokens.
 	/// When enabled, the <see cref="TokenHandler"/> also updates the token automatically
 	/// </summary>
-	public class TokenHandlerV3 : IDisposable, ITokenHandler {
+	public class LoxoneTokenHandler : IDisposable, ITokenHandler {
 		/// <summary>
 		/// The cancellationSource for cancelling autoRenew
 		/// </summary>
@@ -27,7 +27,7 @@ namespace Loxone.Communicator {
 		/// <param name="user">The username of the user</param>
 		/// <param name="token">The token object that should be used (optional)</param>
 		/// <param name="canRenewToken">Whether or not the tokenHandler should be allowed to renew the token automatically (true if not set!)</param>
-		public TokenHandlerV3(IWebserviceClient clientToAutentificate, string user, Token token = null, bool canRenewToken = true) {
+		public LoxoneTokenHandler(IWebserviceClient clientToAutentificate, string user, Token token = null, bool canRenewToken = true) {
 			WsClient = clientToAutentificate;
 			Username = user;
 			Token = token;

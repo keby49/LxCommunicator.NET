@@ -15,7 +15,7 @@ namespace Loxone.Communicator {
 
 		public LoxoneWebsocketClient client;
 
-		private TokenHandlerV3 handler;
+		private LoxoneTokenHandler handler;
 
 		private IDisposable loxoneMessageReceivedSubscription;
 
@@ -66,7 +66,7 @@ namespace Loxone.Communicator {
 					}
 				});
 
-			handler = new TokenHandlerV3(client, LoxoneClientConfiguration.LoxoneUser.UserName);
+			handler = new LoxoneTokenHandler(client, LoxoneClientConfiguration.LoxoneUser.UserName);
 			handler.SetPassword(LoxoneClientConfiguration.LoxoneUser.UserPassword);
 			await client.StartAndConnection(handler);
 		}
