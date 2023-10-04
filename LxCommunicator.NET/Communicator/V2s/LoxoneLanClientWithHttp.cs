@@ -3,14 +3,14 @@
 		protected LoxoneLanClientWithHttp(ConnectionConfiguration connectionConfiguration)
 			: base(connectionConfiguration) {
 			Session = new Session(null, ConnectionConfiguration.SessionConfiguration);
-			HttpWebserviceClient = new HttpWebserviceClient(connectionConfiguration, Session);
+			HttpWebserviceClient = new LoxoneRestServiceClient(connectionConfiguration, Session);
 			Session.Client = HttpWebserviceClient;
 		}
 
 		/// <summary>
 		/// The httpClient used for sending the messages
 		/// </summary>
-		public HttpWebserviceClient HttpWebserviceClient { get; set; }
+		public LoxoneRestServiceClient HttpWebserviceClient { get; set; }
 
 		public override void Dispose() {
 			base.Dispose();

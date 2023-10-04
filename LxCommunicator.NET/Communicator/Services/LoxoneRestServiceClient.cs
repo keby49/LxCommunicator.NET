@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace Loxone.Communicator {
 	/// <summary>
-	/// Client to handle httpWebservices to loxone miniserver. Use <see cref="HttpWebserviceClient"/> for communicating via http or derive from it to create your own httpClient.
+	/// Client to handle httpWebservices to loxone miniserver. Use <see cref="LoxoneRestServiceClient"/> for communicating via http or derive from it to create your own httpClient.
 	/// </summary>
-	public class HttpWebserviceClient : WebserviceClient {
+	public class LoxoneRestServiceClient : WebserviceClient {
 		private CancellationTokenSource CancellationTokenSource;
 
 		/// <summary>
@@ -20,7 +20,7 @@ namespace Loxone.Communicator {
 		/// <param name="permissions">Permissions of the connecting user</param>
 		/// <param name="deviceUuid">Uuid of the connecting device</param>
 		/// <param name="deviceInfo">Info of the connecting device</param>
-		public HttpWebserviceClient(ConnectionConfiguration connectionConfiguration)
+		public LoxoneRestServiceClient(ConnectionConfiguration connectionConfiguration)
 			: base(connectionConfiguration) {
 			if (connectionConfiguration is null) {
 				throw new ArgumentNullException(nameof(connectionConfiguration));
@@ -36,7 +36,7 @@ namespace Loxone.Communicator {
 		/// <param name="ip">IP adress of the miniserver</param>
 		/// <param name="port">Port of the miniserver</param>
 		/// <param name="session">Session object containing info used for connection</param>
-		public HttpWebserviceClient(ConnectionConfiguration connectionConfiguration, Session session)
+		public LoxoneRestServiceClient(ConnectionConfiguration connectionConfiguration, Session session)
 			: base(connectionConfiguration) {
 			HttpClient = new HttpClient();
 			Session = session;

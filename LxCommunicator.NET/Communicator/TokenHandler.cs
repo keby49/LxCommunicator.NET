@@ -129,7 +129,7 @@ namespace Loxone.Communicator {
 		/// Renew the current Token
 		/// </summary>
 		public async Task RenewToken() {
-			if (WsClient is HttpWebserviceClient) {
+			if (WsClient is LoxoneRestServiceClient) {
 				throw new WebserviceException("Renewing Tokens is not supported with HTTP!");
 			}
 

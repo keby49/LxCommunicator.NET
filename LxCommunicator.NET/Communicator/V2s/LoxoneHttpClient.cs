@@ -1,7 +1,7 @@
 ﻿namespace Loxone.Communicator;
 
 internal class LoxoneHttpClient {
-	private static HttpWebserviceClient client;
+	private static LoxoneRestServiceClient client;
 
 	private static ConnectionConfiguration GetConfig() => new ConnectionConfiguration(
 		"testminiserver.loxone.com",
@@ -12,8 +12,8 @@ internal class LoxoneHttpClient {
 
 	private static LoxoneUser GetUser() => new LoxoneUser { UserName = "lan", UserPassword = "JQ9Hsa9tP5xtnW", };
 
-	private static HttpWebserviceClient GetClient() {
-		return new HttpWebserviceClient(GetConfig());
+	private static LoxoneRestServiceClient GetClient() {
+		return new LoxoneRestServiceClient(GetConfig());
 	}
 
 	//private static async Task Main(string[] args) {
